@@ -12,12 +12,14 @@ import MemoriesSection from "@/components/MemoriesSection";
 import GallerySection from "@/components/GallerySection";
 import SurpriseSection from "@/components/SurpriseSection";
 import SpecialForYouModal from "@/components/SpecialForYouModal";
+import BirthdayPinLock from "@/components/BirthdayPinLock";
 import ScrollReveal from "@/components/ScrollReveal";
 import { romanticAudio } from "@/components/audioHelper";
 import { Heart, ArrowUp, Music } from "lucide-react";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("home");
+  const [isUnlocked, setIsUnlocked] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [specialModalOpen, setSpecialModalOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -85,6 +87,18 @@ export default function Home() {
       removeInteractionListeners();
     };
   }, []);
+
+  const handleUnlock = () => {
+    setIsUnlocked(true);
+    if (romanticAudio) {
+      romanticAudio.start().then((started) => {
+        if (started) {
+          setIsMusicPlaying(true);
+          setShowMusicPrompt(false);
+        }
+      });
+    }
+  };
 
   const toggleMusic = () => {
     if (!romanticAudio) return;
@@ -195,8 +209,22 @@ export default function Home() {
           <p className="text-[11px] font-mono text-zinc-400 pt-1">
             © 2026 Alika Birthday Special Edition. All memories preserved with love.
           </p>
+          <div className="pt-2">
+            <button
+              onClick={() => setIsUnlocked(false)}
+              className="text-[11px] text-pink-400 hover:text-pink-600 transition-colors underline"
+              title="Kunci kembali dengan PIN 0206"
+            >
+              🔒 Kunci Kembali Halaman (PIN 0206)
+            </button>
+          </div>
         </div>
       </footer>
+
+      {/* 4-Digit Birthday PIN Lock Screen ("0-2-0-6") */}
+      {!isUnlocked && (
+        <BirthdayPinLock onUnlock={handleUnlock} />
+      )}
 
       {/* Scroll to Top Floating Button */}
       {showScrollTop && (
