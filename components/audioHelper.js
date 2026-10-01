@@ -1,16 +1,13 @@
 // Romantic audio controller
-// Real audio player with fallback synth
+// Dedicated HTML5 Audio Player for Devano playlist (Surat Hati, Rembulan, Menyimpan Rasa)
 
 class RomanticAudioController {
   constructor() {
     this.audioElement = null;
-    this.ctx = null;
     this.isPlaying = false;
-    this.timer = null;
-    this.currentStep = 0;
-    this.volume = 0.35;
-    this.useSynth = false;
+    this.volume = 0.7;
     this.onTrackChangeCallback = null;
+    this.onPlayStateChangeCallback = null;
 
     this.playlist = [
       { title: "Surat Hati", artist: "Devano", src: "/audio/surathati.mp3" },
@@ -26,42 +23,42 @@ class RomanticAudioController {
 
   initAudioElement() {
     try {
-      this.audioElement = new Audio(this.playlist[this.currentTrackIndex].src);
+      this.audioElement = new Audio();
+      this.audioElement.src = this.playlist[this.currentTrackIndex].src;
+      this.audioElement.loop = false;
+      this.audioElement.volume = this.volume;
+      this.audioElement.preload = "auto";
 
-      this.audioElement.loop = false; // We handle track ending ourselves
-      this.audioElement.volume = 0.7;
-      this.audioElement.preload = "metadata";
-
-      this.audioElement.onerror = () => {
-        console.warn("Audio file tidak ditemukan. Menggunakan synth.");
-        this.useSynth = true;
+      this.audioElement.onerror = (e) => {
+        console.warn("Gagal memuat file audio:", this.playlist[this.currentTrackIndex]?.src, e);
       };
 
       this.audioElement.onplay = () => {
         this.isPlaying = true;
+        if (this.onPlayStateChangeCallback) {
+          this.onPlayStateChangeCallback(true);
+        }
       };
 
       this.audioElement.onpause = () => {
         this.isPlaying = false;
+        if (this.onPlayStateChangeCallback) {
+          this.onPlayStateChangeCallback(false);
+        }
       };
 
       this.audioElement.onended = () => {
         this.nextTrack();
       };
     } catch (e) {
-      console.error("Gagal membuat audio:", e);
-      this.useSynth = true;
+      console.error("Gagal inisialisasi audio element:", e);
     }
   }
-
-  // =========================
-  // REAL AUDIO CONTROLS
-  // =========================
 
   getAudio() {
     return this.audioElement;
   }
-  
+
   getCurrentTrack() {
     return this.playlist[this.currentTrackIndex];
   }
@@ -80,233 +77,82 @@ class RomanticAudioController {
 
   seek(time) {
     if (!this.audioElement) return;
-
     const duration = this.getDuration();
-
     if (!Number.isFinite(duration)) return;
-
     const safeTime = Math.max(0, Math.min(time, duration));
-
     this.audioElement.currentTime = safeTime;
   }
 
   restart() {
     if (!this.audioElement) return;
-
     this.audioElement.currentTime = 0;
   }
-  
+
   nextTrack() {
-    this.currentTrackIndex = this.currentTrackIndex + 1;
-    if (this.currentTrackIndex >= this.playlist.length) {
-      this.currentTrackIndex = 0; // Kembali ke lagu pertama (Surat Hati)
-    }
-    this.loadAndPlayCurrent(true); // Paksa mainkan lagu baru
-  }
-  
-  prevTrack() {
-    this.currentTrackIndex = this.currentTrackIndex - 1;
-    if (this.currentTrackIndex < 0) {
-      this.currentTrackIndex = this.playlist.length - 1;
-    }
+    this.currentTrackIndex = (this.currentTrackIndex + 1) % this.playlist.length;
     this.loadAndPlayCurrent(true);
   }
-  
+
+  prevTrack() {
+    this.currentTrackIndex =
+      (this.currentTrackIndex - 1 + this.playlist.length) % this.playlist.length;
+    this.loadAndPlayCurrent(true);
+  }
+
   loadAndPlayCurrent(forcePlay = false) {
     if (this.audioElement) {
       this.audioElement.src = this.playlist[this.currentTrackIndex].src;
       this.audioElement.load();
       if (this.isPlaying || forcePlay) {
         this.isPlaying = true;
-        this.audioElement.play().catch(() => {
-           this.useSynth = true;
-           this.startSynth();
-        });
+        const playPromise = this.audioElement.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => {
+            console.warn("Autoplay terhalang atau gagal:", err);
+          });
+        }
       }
     }
     if (this.onTrackChangeCallback) {
-       this.onTrackChangeCallback(this.playlist[this.currentTrackIndex]);
+      this.onTrackChangeCallback(this.playlist[this.currentTrackIndex]);
     }
   }
-  
+
   setTrackChangeListener(callback) {
-     this.onTrackChangeCallback = callback;
+    this.onTrackChangeCallback = callback;
   }
 
-  // =========================
-  // SYNTH FALLBACK
-  // =========================
-
-  initContext() {
-    if (!this.ctx && typeof window !== "undefined") {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-
-      if (AudioCtx) {
-        this.ctx = new AudioCtx();
-      }
-    }
+  setPlayStateListener(callback) {
+    this.onPlayStateChangeCallback = callback;
   }
-
-  playNote(freq, time, duration = 1.6) {
-    if (!this.ctx) return;
-
-    try {
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, time);
-
-      const osc2 = this.ctx.createOscillator();
-      const gain2 = this.ctx.createGain();
-
-      osc2.type = "triangle";
-      osc2.frequency.setValueAtTime(freq * 2, time);
-
-      gain.gain.setValueAtTime(0, time);
-      gain.gain.linearRampToValueAtTime(
-        this.volume * 0.16,
-        time + 0.06
-      );
-      gain.gain.exponentialRampToValueAtTime(
-        0.0001,
-        time + duration
-      );
-
-      gain2.gain.setValueAtTime(0, time);
-      gain2.gain.linearRampToValueAtTime(
-        this.volume * 0.04,
-        time + 0.05
-      );
-      gain2.gain.exponentialRampToValueAtTime(
-        0.0001,
-        time + duration * 0.85
-      );
-
-      osc.connect(gain);
-      osc2.connect(gain2);
-
-      gain.connect(this.ctx.destination);
-      gain2.connect(this.ctx.destination);
-
-      osc.start(time);
-      osc2.start(time);
-
-      osc.stop(time + duration);
-      osc2.stop(time + duration);
-    } catch (e) {
-      console.warn("Audio error:", e);
-    }
-  }
-
-  playArpeggio(notes, time, duration = 3.0) {
-    notes.forEach((freq, idx) => {
-      this.playNote(
-        freq,
-        time + idx * 0.14,
-        duration
-      );
-    });
-  }
-
-  startSynth() {
-    this.initContext();
-
-    if (!this.ctx) return;
-
-    if (this.ctx.state === "suspended") {
-      this.ctx.resume();
-    }
-
-    this.isPlaying = true;
-
-    const chords = [
-      [130.81, 164.81, 196.0, 261.63, 329.63],
-      [123.47, 146.83, 196.0, 246.94, 293.66],
-      [110.0, 164.81, 196.0, 220.0, 261.63],
-      [87.31, 130.81, 174.61, 220.0, 261.63, 329.63],
-    ];
-
-    const melodyTones = [
-      [329.63, 293.66, 261.63],
-      [293.66, 261.63, 246.94],
-      [261.63, 220.0, 261.63],
-      [329.63, 349.23, 392.0],
-    ];
-
-    const stepDuration = 3.2;
-
-    const tick = () => {
-      if (!this.isPlaying) return;
-
-      const now = this.ctx.currentTime;
-      const step = this.currentStep % chords.length;
-
-      this.playArpeggio(
-        chords[step],
-        now,
-        stepDuration * 1.3
-      );
-
-      const melodic = melodyTones[step];
-
-      melodic.forEach((note, nIdx) => {
-        this.playNote(
-          note,
-          now + 0.8 + nIdx * 0.7,
-          1.8
-        );
-      });
-
-      this.currentStep =
-        (this.currentStep + 1) % chords.length;
-
-      this.timer = setTimeout(
-        tick,
-        stepDuration * 1000
-      );
-    };
-
-    tick();
-  }
-
-  stopSynth() {
-    this.isPlaying = false;
-
-    if (this.timer) {
-      clearTimeout(this.timer);
-      this.timer = null;
-    }
-  }
-
-  // =========================
-  // PLAY / PAUSE
-  // =========================
 
   start() {
-    if (this.audioElement && !this.useSynth) {
-      this.audioElement
-        .play()
+    if (!this.audioElement) return Promise.resolve(false);
+
+    const playPromise = this.audioElement.play();
+    if (playPromise !== undefined) {
+      return playPromise
         .then(() => {
           this.isPlaying = true;
+          if (this.onPlayStateChangeCallback) {
+            this.onPlayStateChangeCallback(true);
+          }
+          return true;
         })
         .catch((error) => {
-          console.warn(
-            "Audio gagal diputar:",
-            error
-          );
-
-          this.useSynth = true;
-          this.startSynth();
+          console.warn("Audio play menunggu interaksi pengguna (user gesture):", error);
+          this.isPlaying = false;
+          if (this.onPlayStateChangeCallback) {
+            this.onPlayStateChangeCallback(false);
+          }
+          return false;
         });
-    } else {
-      this.startSynth();
     }
+    return Promise.resolve(false);
   }
 
   stop() {
     this.isPlaying = false;
-
     if (this.audioElement) {
       try {
         this.audioElement.pause();
@@ -314,18 +160,19 @@ class RomanticAudioController {
         console.warn("Gagal pause audio:", e);
       }
     }
-
-    this.stopSynth();
+    if (this.onPlayStateChangeCallback) {
+      this.onPlayStateChangeCallback(false);
+    }
   }
 
   toggle() {
     if (this.isPlaying) {
       this.stop();
       return false;
+    } else {
+      this.start();
+      return true;
     }
-
-    this.start();
-    return true;
   }
 }
 

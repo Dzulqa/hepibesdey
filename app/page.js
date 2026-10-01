@@ -31,32 +31,42 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Autoplay musik saat ada interaksi pertama user
+  // Autoplay musik saat ada interaksi pertama user (klik/tap/keyboard)
   useEffect(() => {
     if (!romanticAudio) return;
 
-    const startMusic = () => {
+    // Sinkronkan state jika dipause/diplay dari komponen lain
+    romanticAudio.setPlayStateListener((playing) => {
+      setIsMusicPlaying(playing);
+    });
+
+    const startMusicOnInteraction = () => {
       if (!romanticAudio.isPlaying) {
-        romanticAudio.start();
-        setIsMusicPlaying(true);
+        romanticAudio.start().then((started) => {
+          if (started) {
+            setIsMusicPlaying(true);
+            removeInteractionListeners();
+          }
+        });
+      } else {
+        removeInteractionListeners();
       }
-      // Hapus semua listener setelah musik mulai
-      window.removeEventListener("click", startMusic);
-      window.removeEventListener("touchstart", startMusic);
-      window.removeEventListener("keydown", startMusic);
-      window.removeEventListener("scroll", startMusic);
     };
 
-    window.addEventListener("click", startMusic);
-    window.addEventListener("touchstart", startMusic);
-    window.addEventListener("keydown", startMusic);
-    window.addEventListener("scroll", startMusic);
+    const removeInteractionListeners = () => {
+      window.removeEventListener("click", startMusicOnInteraction);
+      window.removeEventListener("touchstart", startMusicOnInteraction);
+      window.removeEventListener("pointerdown", startMusicOnInteraction);
+      window.removeEventListener("keydown", startMusicOnInteraction);
+    };
+
+    window.addEventListener("click", startMusicOnInteraction);
+    window.addEventListener("touchstart", startMusicOnInteraction);
+    window.addEventListener("pointerdown", startMusicOnInteraction);
+    window.addEventListener("keydown", startMusicOnInteraction);
 
     return () => {
-      window.removeEventListener("click", startMusic);
-      window.removeEventListener("touchstart", startMusic);
-      window.removeEventListener("keydown", startMusic);
-      window.removeEventListener("scroll", startMusic);
+      removeInteractionListeners();
     };
   }, []);
 
