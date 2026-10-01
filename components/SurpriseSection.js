@@ -643,11 +643,11 @@ function MemoryMatchGame() {
 function RomanticSpinWheel() {
   const prizes = [
     { title: "Ditraktir Boba / Es Krim", icon: "🍦", color: "#fda4af" },
-    { title: "Dipijit Pas Capek", icon: "💆‍♀️", color: "#f9a8d4" },
-    { title: "Kencan Bebas Pilih Tempat", icon: "🌆", color: "#fbcfe8" },
-    { title: "Peluk Hangat 10 Menit", icon: "🫂", color: "#f472b6" },
-    { title: "1 Permintaan Khusus Bebas", icon: "👑", color: "#fb7185" },
-    { title: "Dengerin Curhat Seharian", icon: "👂", color: "#f43f5e" },
+    { title: "Dipijitin pas cape", icon: "💆‍♀️", color: "#f9a8d4" },
+    { title: "Muter muter kemana aja", icon: "🌆", color: "#fbcfe8" },
+    { title: "Pelukan unlimited", icon: "🫂", color: "#f472b6" },
+    { title: "1 Permintaan Khusus Bebas (Masuk akal)", icon: "👑", color: "#fb7185" },
+    { title: "Mabar Heartopia Seharian", icon: "🎮", color: "#f43f5e" },
   ];
 
   const [rotation, setRotation] = useState(0);
