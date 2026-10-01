@@ -47,12 +47,12 @@ export default function HeroSection({ onOpenMessage, onOpenGames }) {
 
             {/* Headline: To My Dearest Alika */}
             <div className="space-y-1">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif-romantic tracking-tight text-zinc-800 dark:text-zinc-100 font-normal leading-[1.15]">
+              <h1 className="text-3xl sm:text-5xl md:text-6xl font-serif-romantic tracking-tight text-zinc-800 dark:text-zinc-100 font-normal leading-[1.15]">
                 To My
                 <br className="hidden sm:inline" /> Dearest{" "}
                 <span 
                   onClick={handleSparkleClick}
-                  className="font-script text-5xl sm:text-6xl md:text-7xl font-bold text-[#d95376] dark:text-[#f472b6] cursor-pointer inline-block hover:scale-105 transition-transform drop-shadow-xs"
+                  className="font-script text-4xl sm:text-6xl md:text-7xl font-bold text-[#d95376] dark:text-[#f472b6] cursor-pointer inline-block hover:scale-105 transition-transform drop-shadow-xs"
                   title="Klik untuk efek cinta!"
                 >
                   Alika
@@ -86,9 +86,9 @@ export default function HeroSection({ onOpenMessage, onOpenGames }) {
           </div>
 
           {/* Right Column: Scrapbook Polaroid Showcase */}
-          <div className="lg:col-span-6 flex justify-center items-center relative py-6">
+          <div className="lg:col-span-6 flex justify-center items-center relative py-4 sm:py-6 overflow-visible">
             <div 
-              className="relative max-w-sm w-full mx-auto"
+              className="relative max-w-[285px] sm:max-w-sm w-full mx-auto"
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
             >
@@ -111,10 +111,10 @@ export default function HeroSection({ onOpenMessage, onOpenGames }) {
               </div>
 
               {/* Main Prominent Polaroid */}
-              <div className="relative z-10 bg-white dark:bg-[#25152a] p-3.5 sm:p-4 pb-9 sm:pb-11 rounded-sm shadow-xl border border-pink-100/80 dark:border-pink-900/50 rotate-2 hover:rotate-0 transition-transform duration-300 group">
+              <div className="relative z-10 bg-white dark:bg-[#25152a] p-3 sm:p-4 pb-8 sm:pb-11 rounded-sm shadow-xl border border-pink-100/80 dark:border-pink-900/50 rotate-1 sm:rotate-2 hover:rotate-0 transition-transform duration-300 group">
                 
                 {/* Washi Tape on Top Center */}
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-28 h-6 bg-pink-300/80 dark:bg-pink-700/70 backdrop-blur-xs border-x-2 border-dashed border-white/60 shadow-xs z-20 -rotate-1">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-24 sm:w-28 h-6 bg-pink-300/80 dark:bg-pink-700/70 backdrop-blur-xs border-x-2 border-dashed border-white/60 shadow-xs z-20 -rotate-1">
                   <span className="block text-[10px] tracking-widest uppercase font-semibold text-center text-pink-950/70 pt-0.5">
                     LOVE YOU
                   </span>
@@ -125,7 +125,7 @@ export default function HeroSection({ onOpenMessage, onOpenGames }) {
                   <img
                     src="/images/nari.jpeg"
                     alt="To My Dearest Alika"
-                    className="w-full h-full object-cover group-hover:scale-124 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     onError={(e) => {
                       e.target.src = "/images/polaroid_flower.svg";
                     }}
@@ -146,17 +146,17 @@ export default function HeroSection({ onOpenMessage, onOpenGames }) {
 
               {/* Sticky Scrapbook Tape Badges */}
               {/* Badge 1: More Happy */}
-              <div className="absolute -right-2 top-8 z-20 px-3 py-1 bg-[#fff0f3] dark:bg-[#3d1a2d] border border-pink-200 dark:border-pink-800 text-pink-700 dark:text-pink-300 text-xs font-semibold rounded-md shadow-sm -rotate-3 hover:rotate-0 transition-transform cursor-pointer">
+              <div className="absolute -right-1 sm:-right-2 top-8 z-20 px-2.5 sm:px-3 py-1 bg-[#fff0f3] dark:bg-[#3d1a2d] border border-pink-200 dark:border-pink-800 text-pink-700 dark:text-pink-300 text-[11px] sm:text-xs font-semibold rounded-md shadow-sm -rotate-3 hover:rotate-0 transition-transform cursor-pointer">
                 More Happy
               </div>
 
               {/* Badge 2: More Love */}
-              <div className="absolute -right-4 top-28 z-20 px-3 py-1 bg-[#ffe4ea] dark:bg-[#481c33] border border-pink-200 dark:border-pink-800 text-pink-700 dark:text-pink-300 text-xs font-semibold rounded-md shadow-sm rotate-6 hover:rotate-0 transition-transform cursor-pointer">
+              <div className="absolute -right-2 sm:-right-4 top-24 sm:top-28 z-20 px-2.5 sm:px-3 py-1 bg-[#ffe4ea] dark:bg-[#481c33] border border-pink-200 dark:border-pink-800 text-pink-700 dark:text-pink-300 text-[11px] sm:text-xs font-semibold rounded-md shadow-sm rotate-6 hover:rotate-0 transition-transform cursor-pointer">
                 More Love
               </div>
 
               {/* Badge 3: More Alika */}
-              <div className="absolute -right-2 bottom-8 z-20 px-3.5 py-1.5 bg-[#fce7ed] dark:bg-[#521e3b] border border-pink-300 dark:border-pink-700 text-pink-800 dark:text-pink-200 text-xs font-bold rounded-md shadow-sm -rotate-2 hover:rotate-0 transition-transform cursor-pointer">
+              <div className="absolute -right-1 sm:-right-2 bottom-8 z-20 px-3 sm:px-3.5 py-1 sm:py-1.5 bg-[#fce7ed] dark:bg-[#521e3b] border border-pink-300 dark:border-pink-700 text-pink-800 dark:text-pink-200 text-[11px] sm:text-xs font-bold rounded-md shadow-sm -rotate-2 hover:rotate-0 transition-transform cursor-pointer">
                 More Alika
               </div>
 

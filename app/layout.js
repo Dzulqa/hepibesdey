@@ -1,5 +1,11 @@
 import "./globals.css";
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata = {
   title: "Happy Birthday Alika ♡ | To My Dearest Alika",
   description: "Di hari spesial ini, aku cuma mau bilang makasih udah selalu ada, jadi diri sendiri, dan bikin hari-hariku lebih berwarna.",

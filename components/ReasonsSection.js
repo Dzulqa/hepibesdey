@@ -138,7 +138,7 @@ export default function ReasonsSection() {
       {/* Interactive Modal to Read Full Reason */}
       {selectedReason && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md bg-white dark:bg-[#201024] p-6 sm:p-7 rounded-3xl border border-pink-200 dark:border-pink-800 shadow-2xl space-y-4">
+          <div className="relative w-full max-w-md bg-white dark:bg-[#201024] p-5 sm:p-7 rounded-3xl border border-pink-200 dark:border-pink-800 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
 
             <button
               onClick={() => setSelectedReason(null)}

@@ -61,11 +61,14 @@ export default function QuickNavCards({ onSelectTab }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
         {cards.map((item, index) => {
           const Icon = item.icon;
+          const isLastOnMobile = index === 4;
           return (
             <button
               key={`${item.id}-${index}`}
               onClick={() => handleClick(item.id)}
-              className="group relative p-4 sm:p-5 rounded-2xl bg-white/70 dark:bg-pink-950/30 border border-pink-200/80 dark:border-pink-900/60 backdrop-blur-xs hover:border-pink-400 dark:hover:border-pink-600 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-2.5 hover:-translate-y-1 text-center"
+              className={`group relative p-3.5 sm:p-5 rounded-2xl bg-white/70 dark:bg-pink-950/30 border border-pink-200/80 dark:border-pink-900/60 backdrop-blur-xs hover:border-pink-400 dark:hover:border-pink-600 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-2 hover:-translate-y-1 text-center ${
+                isLastOnMobile ? "col-span-2 sm:col-span-1 md:col-span-1 max-w-[200px] sm:max-w-none mx-auto w-full" : ""
+              }`}
             >
               {/* Optional ribbon badge for gallery */}
               {item.badge && (

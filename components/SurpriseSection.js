@@ -704,9 +704,9 @@ function RomanticSpinWheel() {
       </div>
 
       {/* The Wheel */}
-      <div className="relative w-64 h-64 mx-auto flex items-center justify-center">
+      <div className="relative w-56 h-56 sm:w-64 sm:h-64 mx-auto flex items-center justify-center">
         {/* Pointer Arrow on Top */}
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-20 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[20px] border-t-pink-600 drop-shadow-md" />
+        <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-20 w-0 h-0 border-l-[10px] sm:border-l-[12px] border-l-transparent border-r-[10px] sm:border-r-[12px] border-r-transparent border-t-[18px] sm:border-t-[20px] border-t-pink-600 drop-shadow-md" />
 
         {/* Outer Wheel Ring */}
         <div
@@ -740,7 +740,7 @@ function RomanticSpinWheel() {
         <button
           onClick={spin}
           disabled={isSpinning}
-          className="absolute z-10 w-16 h-16 rounded-full bg-white dark:bg-zinc-800 border-2 border-pink-400 shadow-md flex flex-col items-center justify-center active:scale-95 transition-transform font-bold text-xs text-pink-600 dark:text-pink-300 disabled:opacity-50"
+          className="absolute z-10 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white dark:bg-zinc-800 border-2 border-pink-400 shadow-md flex flex-col items-center justify-center active:scale-95 transition-transform font-bold text-[11px] sm:text-xs text-pink-600 dark:text-pink-300 disabled:opacity-50"
         >
           <span>{isSpinning ? "..." : "PUTAR"}</span>
           <Heart className="w-3 h-3 fill-pink-500 text-pink-500" />

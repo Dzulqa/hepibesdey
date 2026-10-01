@@ -14,13 +14,14 @@ import SurpriseSection from "@/components/SurpriseSection";
 import SpecialForYouModal from "@/components/SpecialForYouModal";
 import ScrollReveal from "@/components/ScrollReveal";
 import { romanticAudio } from "@/components/audioHelper";
-import { Heart, ArrowUp } from "lucide-react";
+import { Heart, ArrowUp, Music } from "lucide-react";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("home");
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [specialModalOpen, setSpecialModalOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showMusicPrompt, setShowMusicPrompt] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,14 +39,21 @@ export default function Home() {
     // Sinkronkan state jika dipause/diplay dari komponen lain
     romanticAudio.setPlayStateListener((playing) => {
       setIsMusicPlaying(playing);
+      if (playing) {
+        setShowMusicPrompt(false);
+      }
     });
 
-    const startMusicOnInteraction = () => {
+    const triggerPlay = () => {
       if (!romanticAudio.isPlaying) {
         romanticAudio.start().then((started) => {
           if (started) {
             setIsMusicPlaying(true);
+            setShowMusicPrompt(false);
             removeInteractionListeners();
+          } else {
+            // Jika browser menolak play otomatis saat scroll mouse wheel tanpa klik
+            setShowMusicPrompt(true);
           }
         });
       } else {
@@ -54,22 +62,24 @@ export default function Home() {
     };
 
     const removeInteractionListeners = () => {
-      window.removeEventListener("scroll", startMusicOnInteraction);
-      window.removeEventListener("wheel", startMusicOnInteraction);
-      window.removeEventListener("touchmove", startMusicOnInteraction);
-      window.removeEventListener("touchstart", startMusicOnInteraction);
-      window.removeEventListener("click", startMusicOnInteraction);
-      window.removeEventListener("pointerdown", startMusicOnInteraction);
-      window.removeEventListener("keydown", startMusicOnInteraction);
+      window.removeEventListener("scroll", triggerPlay);
+      window.removeEventListener("wheel", triggerPlay);
+      window.removeEventListener("touchmove", triggerPlay);
+      window.removeEventListener("touchstart", triggerPlay);
+      window.removeEventListener("pointerdown", triggerPlay);
+      window.removeEventListener("mousedown", triggerPlay);
+      window.removeEventListener("click", triggerPlay);
+      window.removeEventListener("keydown", triggerPlay);
     };
 
-    window.addEventListener("scroll", startMusicOnInteraction, { passive: true });
-    window.addEventListener("wheel", startMusicOnInteraction, { passive: true });
-    window.addEventListener("touchmove", startMusicOnInteraction, { passive: true });
-    window.addEventListener("touchstart", startMusicOnInteraction, { passive: true });
-    window.addEventListener("click", startMusicOnInteraction);
-    window.addEventListener("pointerdown", startMusicOnInteraction);
-    window.addEventListener("keydown", startMusicOnInteraction);
+    window.addEventListener("scroll", triggerPlay, { passive: true });
+    window.addEventListener("wheel", triggerPlay, { passive: true });
+    window.addEventListener("touchmove", triggerPlay, { passive: true });
+    window.addEventListener("touchstart", triggerPlay, { passive: true });
+    window.addEventListener("pointerdown", triggerPlay);
+    window.addEventListener("mousedown", triggerPlay);
+    window.addEventListener("click", triggerPlay);
+    window.addEventListener("keydown", triggerPlay);
 
     return () => {
       removeInteractionListeners();
@@ -80,6 +90,9 @@ export default function Home() {
     if (!romanticAudio) return;
     const playing = romanticAudio.toggle();
     setIsMusicPlaying(playing);
+    if (playing) {
+      setShowMusicPrompt(false);
+    }
   };
 
   const scrollToSection = (id) => {
@@ -202,6 +215,17 @@ export default function Home() {
         onClose={() => setSpecialModalOpen(false)}
         onNavigate={(tabId) => scrollToSection(tabId)}
       />
+
+      {/* Floating Prompt jika browser membatasi autoplay pada scroll murni */}
+      {showMusicPrompt && !isMusicPlaying && (
+        <div
+          onClick={toggleMusic}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full bg-gradient-to-r from-pink-500 via-rose-500 to-pink-500 text-white text-xs sm:text-sm font-medium shadow-xl shadow-pink-500/30 flex items-center gap-2.5 cursor-pointer animate-bounce hover:scale-105 active:scale-95 transition-all border border-pink-200 backdrop-blur-md"
+        >
+          <Music className="w-4 h-4 text-white animate-spin" />
+          <span>Putar Musik Romantis ♡ (Klik Disini)</span>
+        </div>
+      )}
 
     </div>
   );

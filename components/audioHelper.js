@@ -28,6 +28,11 @@ class RomanticAudioController {
       this.audioElement.loop = false;
       this.audioElement.volume = this.volume;
       this.audioElement.preload = "auto";
+      this.audioElement.playsInline = true;
+      if (typeof this.audioElement.setAttribute === "function") {
+        this.audioElement.setAttribute("playsinline", "true");
+        this.audioElement.setAttribute("webkit-playsinline", "true");
+      }
 
       this.audioElement.onerror = (e) => {
         console.warn("Gagal memuat file audio:", this.playlist[this.currentTrackIndex]?.src, e);

@@ -18,7 +18,7 @@ export default function SpecialForYouModal({ isOpen, onClose, onNavigate }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-gradient-to-br from-pink-50 via-white to-rose-50 dark:from-[#1e1022] dark:via-[#28152e] dark:to-[#1a0e1e] p-6 sm:p-8 rounded-3xl border border-pink-200 dark:border-pink-800 shadow-2xl space-y-5 text-center">
+      <div className="relative w-full max-w-lg bg-gradient-to-br from-pink-50 via-white to-rose-50 dark:from-[#1e1022] dark:via-[#28152e] dark:to-[#1a0e1e] p-5 sm:p-8 rounded-3xl border border-pink-200 dark:border-pink-800 shadow-2xl space-y-4 sm:space-y-5 text-center max-h-[90vh] overflow-y-auto">
         
         {/* Close button */}
         <button

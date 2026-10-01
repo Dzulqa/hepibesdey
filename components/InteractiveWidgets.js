@@ -147,11 +147,11 @@ export default function InteractiveWidgets({ isMusicPlaying, toggleMusic }) {
 
   return (
     <section className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         
         {/* --- Widget 1: Birthday Countdown --- */}
         <ScrollReveal direction="left" amount={0.1}>
-          <div className="p-6 rounded-2xl bg-white/80 dark:bg-pink-950/30 border border-pink-200/80 dark:border-pink-900/60 backdrop-blur-md shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
+          <div className="p-4 sm:p-6 rounded-2xl bg-white/80 dark:bg-pink-950/30 border border-pink-200/80 dark:border-pink-900/60 backdrop-blur-md shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
           
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -187,7 +187,7 @@ export default function InteractiveWidgets({ isMusicPlaying, toggleMusic }) {
           )}
 
           {/* 4 Counter Blocks */}
-          <div className="grid grid-cols-4 gap-2 sm:gap-3 my-2">
+          <div className="grid grid-cols-4 gap-1.5 sm:gap-3 my-2">
             {[
               { label: "Days", value: timeLeft.days },
               { label: "Hours", value: timeLeft.hours },
@@ -196,12 +196,12 @@ export default function InteractiveWidgets({ isMusicPlaying, toggleMusic }) {
             ].map((unit, idx) => (
               <div
                 key={idx}
-                className="bg-pink-50/70 dark:bg-pink-900/30 border border-pink-200/60 dark:border-pink-800/40 rounded-xl py-3 px-2 text-center"
+                className="bg-pink-50/70 dark:bg-pink-900/30 border border-pink-200/60 dark:border-pink-800/40 rounded-xl py-2.5 sm:py-3 px-1 sm:px-2 text-center"
               >
-                <div className="text-2xl sm:text-3xl font-bold text-zinc-800 dark:text-zinc-100 font-mono">
+                <div className="text-xl sm:text-3xl font-bold text-zinc-800 dark:text-zinc-100 font-mono">
                   {String(unit.value).padStart(2, "0")}
                 </div>
-                <div className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mt-0.5">
+                <div className="text-[10px] sm:text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mt-0.5">
                   {unit.label}
                 </div>
               </div>
@@ -210,7 +210,7 @@ export default function InteractiveWidgets({ isMusicPlaying, toggleMusic }) {
 
           {/* Celebration trigger */}
           <div className="mt-4 pt-3 border-t border-pink-100 dark:border-pink-900/40 flex items-center justify-between">
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            <span className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400">
               Hari spesial orang tersayang ✨
             </span>
             <button
@@ -226,7 +226,7 @@ export default function InteractiveWidgets({ isMusicPlaying, toggleMusic }) {
 
         {/* --- Widget 2: Our Song ♡ Music Player --- */}
         <ScrollReveal direction="right" amount={0.1}>
-          <div className="p-6 rounded-2xl bg-white/80 dark:bg-pink-950/30 border border-pink-200/80 dark:border-pink-900/60 backdrop-blur-md shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
+          <div className="p-4 sm:p-6 rounded-2xl bg-white/80 dark:bg-pink-950/30 border border-pink-200/80 dark:border-pink-900/60 backdrop-blur-md shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
           
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm sm:text-base font-semibold text-zinc-800 dark:text-zinc-100 flex items-center gap-1.5">

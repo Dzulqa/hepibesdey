@@ -104,20 +104,22 @@ export default function MessagesSection() {
           /* Closed Interactive Envelope with Wax Seal */
           <div
             onClick={handleOpenEnvelope}
-            className="cursor-pointer group relative w-full aspect-[16/10] bg-gradient-to-br from-pink-100 to-rose-200 dark:from-pink-950/70 dark:to-rose-950/60 rounded-3xl border-2 border-pink-300 dark:border-pink-800 shadow-xl flex items-center justify-center p-6 hover:scale-102 hover:shadow-2xl transition-all duration-300"
+            className="cursor-pointer group relative w-full aspect-[16/10] bg-gradient-to-br from-pink-100 to-rose-200 dark:from-pink-950/70 dark:to-rose-950/60 rounded-3xl border-2 border-pink-300 dark:border-pink-800 shadow-xl flex items-center justify-center p-4 sm:p-6 hover:scale-102 hover:shadow-2xl transition-all duration-300 overflow-hidden"
           >
-            {/* Envelope Flap Lines */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-0 h-0 border-l-[140px] sm:border-l-[220px] border-l-transparent border-r-[140px] sm:border-r-[220px] border-r-transparent border-t-[100px] sm:border-t-[150px] border-t-pink-200/80 dark:border-t-pink-900/60 absolute top-0" />
+            {/* Envelope Flap SVG - Fully Responsive */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl">
+              <svg className="w-full h-1/2 absolute top-0 text-pink-200/90 dark:text-pink-900/70" viewBox="0 0 100 50" preserveAspectRatio="none">
+                <polygon points="0,0 100,0 50,50" fill="currentColor" />
+              </svg>
             </div>
 
             {/* Red Wax Seal Heart */}
-            <div className="z-10 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#c73e63] to-[#e06b88] border-2 border-pink-200 shadow-lg flex flex-col items-center justify-center text-white group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-              <Heart className="w-8 h-8 fill-white" />
-              <span className="text-[9px] font-bold tracking-widest mt-0.5">OPEN</span>
+            <div className="z-10 w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#c73e63] to-[#e06b88] border-2 border-pink-200 shadow-lg flex flex-col items-center justify-center text-white group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+              <Heart className="w-6 h-6 sm:w-8 sm:h-8 fill-white" />
+              <span className="text-[8px] sm:text-[9px] font-bold tracking-widest mt-0.5">OPEN</span>
             </div>
 
-            <div className="absolute bottom-5 text-center">
+            <div className="absolute bottom-3 sm:bottom-5 text-center px-2">
               <p className="text-xs sm:text-sm font-medium text-pink-800 dark:text-pink-300 font-handwriting">
                 ✨ Klik amplop untuk membuka surat ✨
               </p>
@@ -125,15 +127,15 @@ export default function MessagesSection() {
           </div>
         ) : (
           /* Opened Romantic Letter */
-          <div className="w-full bg-[#fffcf7] dark:bg-[#201024] p-6 sm:p-10 rounded-3xl border border-pink-200 dark:border-pink-800/80 shadow-2xl space-y-6 relative animate-in zoom-in-95 duration-300">
+          <div className="w-full bg-[#fffcf7] dark:bg-[#201024] p-4 sm:p-10 rounded-2xl sm:rounded-3xl border border-pink-200 dark:border-pink-800/80 shadow-2xl space-y-5 sm:space-y-6 relative animate-in zoom-in-95 duration-300">
 
             {/* Washi Tape at Top */}
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-32 h-6 bg-pink-300/80 dark:bg-pink-700/70 border-x-2 border-dashed border-white/60 shadow-xs z-10" />
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-28 sm:w-32 h-6 bg-pink-300/80 dark:bg-pink-700/70 border-x-2 border-dashed border-white/60 shadow-xs z-10" />
 
             <div className="flex justify-between items-center border-b border-pink-100 dark:border-pink-900/60 pb-4">
               <div>
                 <p className="font-handwriting text-xs text-zinc-400">Untuk Alika Tersayang,</p>
-                <h3 className="font-script text-2xl sm:text-3xl font-bold text-pink-600 dark:text-pink-400">
+                <h3 className="font-script text-xl sm:text-3xl font-bold text-pink-600 dark:text-pink-400">
                   Selamat Ulang Tahun, Manisku ♡
                 </h3>
               </div>
