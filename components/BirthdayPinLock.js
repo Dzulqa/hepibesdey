@@ -209,7 +209,8 @@ export default function BirthdayPinLock({ onUnlock }) {
               key={idx}
               ref={inputRefs[idx]}
               type="text"
-              inputMode="numeric"
+              inputMode="none"
+              readOnly
               maxLength={1}
               value={digit}
               onChange={(e) => handleInputChange(idx, e.target.value)}
