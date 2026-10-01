@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Lock, Unlock, Heart, Sparkles, Delete, AlertCircle } from "lucide-react";
 import confetti from "canvas-confetti";
 
@@ -10,7 +10,25 @@ export default function BirthdayPinLock({ onUnlock }) {
   const [isShaking, setIsShaking] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showHint, setShowHint] = useState(false);
+  const [isMobile, setIsMobile] = useState(true); // default true untuk SSR safety
   const inputRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
+
+  // Deteksi mobile vs desktop berdasarkan pointer type
+  useEffect(() => {
+    const checkDevice = () => {
+      // Jika device punya fine pointer (mouse), anggap desktop
+      const hasFinePointer = window.matchMedia("(pointer: fine)").matches;
+      const hasHover = window.matchMedia("(hover: hover)").matches;
+      const mobile = !hasFinePointer || !hasHover;
+      setIsMobile(mobile);
+    };
+
+    checkDevice();
+    // Juga listen jika ada perubahan (misalnya tablet dengan stylus)
+    const mq = window.matchMedia("(pointer: fine)");
+    mq.addEventListener("change", checkDevice);
+    return () => mq.removeEventListener("change", checkDevice);
+  }, []);
 
   // Kunci scroll sepenuhnya saat PIN lock aktif
   useEffect(() => {
@@ -22,7 +40,7 @@ export default function BirthdayPinLock({ onUnlock }) {
     window.addEventListener("wheel", preventDefault, { passive: false });
     window.addEventListener("touchmove", preventDefault, { passive: false });
 
-    if (inputRefs[0].current) {
+    if (!isMobile && inputRefs[0].current) {
       inputRefs[0].current.focus();
     }
     return () => {
@@ -30,7 +48,7 @@ export default function BirthdayPinLock({ onUnlock }) {
       window.removeEventListener("wheel", preventDefault);
       window.removeEventListener("touchmove", preventDefault);
     };
-  }, []);
+  }, [isMobile]);
 
   const triggerConfetti = () => {
     try {
@@ -78,7 +96,7 @@ export default function BirthdayPinLock({ onUnlock }) {
       }, 700);
     } else {
       setIsShaking(true);
-      setErrorMsg("PIN salah sayang, coba ingat tanggal spesialmu ya ♡");
+      setErrorMsg("PIN salah cayangg, coba inget tanggal lahir kita ya ♡");
       setTimeout(() => {
         setIsShaking(false);
         setPin(["", "", "", ""]);
@@ -91,6 +109,8 @@ export default function BirthdayPinLock({ onUnlock }) {
 
   const handleInputChange = (index, value) => {
     if (isSuccess) return;
+    // Di desktop (bukan mobile), izinkan input keyboard
+    if (isMobile) return;
     const digit = value.replace(/[^0-9]/g, "").slice(-1);
 
     const newPin = [...pin];
@@ -208,10 +228,12 @@ export default function BirthdayPinLock({ onUnlock }) {
             <input
               key={idx}
               ref={inputRefs[idx]}
-              type="text"
-              inputMode="none"
-              readOnly
-              maxLength={1}
+              type="password"
+              // Mobile: inputMode="none" + readOnly → keyboard HP tidak muncul
+              // Desktop: inputMode="numeric" + bisa diketik → keyboard fisik bisa dipakai
+              inputMode={isMobile ? "none" : "numeric"}
+              readOnly={isMobile}
+               maxLength={1}
               value={digit}
               onChange={(e) => handleInputChange(idx, e.target.value)}
               onKeyDown={(e) => handleKeyDown(idx, e)}
