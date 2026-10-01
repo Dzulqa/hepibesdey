@@ -31,7 +31,7 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Autoplay musik saat ada interaksi pertama user (klik/tap/keyboard)
+  // Autoplay musik saat ada interaksi pertama user (scroll, klik, sentuh layar, keyboard)
   useEffect(() => {
     if (!romanticAudio) return;
 
@@ -54,14 +54,20 @@ export default function Home() {
     };
 
     const removeInteractionListeners = () => {
-      window.removeEventListener("click", startMusicOnInteraction);
+      window.removeEventListener("scroll", startMusicOnInteraction);
+      window.removeEventListener("wheel", startMusicOnInteraction);
+      window.removeEventListener("touchmove", startMusicOnInteraction);
       window.removeEventListener("touchstart", startMusicOnInteraction);
+      window.removeEventListener("click", startMusicOnInteraction);
       window.removeEventListener("pointerdown", startMusicOnInteraction);
       window.removeEventListener("keydown", startMusicOnInteraction);
     };
 
+    window.addEventListener("scroll", startMusicOnInteraction, { passive: true });
+    window.addEventListener("wheel", startMusicOnInteraction, { passive: true });
+    window.addEventListener("touchmove", startMusicOnInteraction, { passive: true });
+    window.addEventListener("touchstart", startMusicOnInteraction, { passive: true });
     window.addEventListener("click", startMusicOnInteraction);
-    window.addEventListener("touchstart", startMusicOnInteraction);
     window.addEventListener("pointerdown", startMusicOnInteraction);
     window.addEventListener("keydown", startMusicOnInteraction);
 
