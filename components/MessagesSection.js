@@ -155,7 +155,7 @@ export default function MessagesSection() {
               <p>
                 Selamat ulang tahun yaa, Di hari yang spesial ini, aku maw ngucapin
                 rasa terimakasii sebanyak banyaknya karena kamu udaa ada dan hadir di hidup akuu.
-                Pas kamu dateng, hari hari aku rasanya jadi jauh lebih bermaknanya, penuh cerita ini itu,
+                Pas kamu dateng, hari hari aku rasanya jadi jauh lebih bermakna, penuh cerita ini itu,
                 dan selalu ada alasan buat tersenyum.
               </p>
               <p>
