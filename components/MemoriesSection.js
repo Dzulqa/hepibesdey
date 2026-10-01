@@ -12,7 +12,7 @@ export default function MemoriesSection() {
       location: "SMP AL-AMANAH",
       image: "/images/couple.jpeg",
       description: "Iseng forbar karena gasengaja couple pink, eh pas lagi rangkul, ada abang OB sekola dibelakang sambil nyengir haha",
-      tag: "First Meet",
+      tag: "Just Us",
     },
     {
       id: 2,
@@ -20,7 +20,7 @@ export default function MemoriesSection() {
       location: "Jogja HeHa Sky",
       image: "/images/jogja.jpeg",
       description: "Lagi jalan sendiri eh tibatiba ada yang gandeng, untung cakep, yauda terus kita beli gulali dehh",
-      tag: "First Date",
+      tag: "Just Us",
     },
     {
       id: 3,
@@ -28,7 +28,7 @@ export default function MemoriesSection() {
       location: "Paradise Walk CGV",
       image: "/images/nonton.jpeg",
       description: "Kita nonton bedua diparadise CGV, nonton apa ya gatau lupa, kayanya horor, eh apa Jumbo ya? gatau lupaa",
-      tag: "Sweet Trip",
+      tag: "Just Us",
     },
     {
       id: 4,
@@ -36,7 +36,7 @@ export default function MemoriesSection() {
       location: "Home",
       image: "/images/pkl.jpeg",
       description: "Kacian pulang pkl kecapean, mau minta peyukk, terus aku dapet sneckers juga myfav coklat hehee",
-      tag: "Birthday Girl",
+      tag: "Just Us",
     },
   ];
 
