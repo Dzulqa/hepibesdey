@@ -11,7 +11,7 @@ export default function MemoriesSection() {
       title: "Pulang Ekskul",
       location: "SMP AL-AMANAH",
       image: "/images/couple.jpeg",
-      description: "Iseng forbar karena gasengaja couple pink, eh pas lagi rangkul, ada abang OB sekola dibelakang",
+      description: "Iseng forbar karena gasengaja couple pink, eh pas lagi rangkul, ada abang OB sekola dibelakang sambil nyengir haha",
       tag: "First Meet",
     },
     {
@@ -19,7 +19,7 @@ export default function MemoriesSection() {
       title: "Beli Gulali", 
       location: "Jogja HeHa Sky",
       image: "/images/jogja.jpeg",
-      description: "Kita berdua beli gulali di HeHa SKY, terus abis itu kita keliling lagi deh sekalian foto foto",
+      description: "Lagi jalan sendiri eh tibatiba ada yang gandeng, untung cakep, yauda terus kita beli gulali dehh",
       tag: "First Date",
     },
     {
@@ -27,7 +27,7 @@ export default function MemoriesSection() {
       title: "Nonton",
       location: "Paradise Walk CGV",
       image: "/images/nonton.jpeg",
-      description: "Kita nonton bedua diparadise CGV, nonton apa ya gatau lupa, kayanya horor, eh apa Jumbo ya",
+      description: "Kita nonton bedua diparadise CGV, nonton apa ya gatau lupa, kayanya horor, eh apa Jumbo ya? gatau lupaa",
       tag: "Sweet Trip",
     },
     {

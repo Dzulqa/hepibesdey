@@ -153,18 +153,17 @@ export default function MessagesSection() {
             <div className="space-y-4 text-sm sm:text-base text-zinc-700 dark:text-zinc-200 leading-relaxed font-sans">
               <p>Halow cayangku cintaa,</p>
               <p>
-                Selamat ulang tahun yaa, Di hari yang indah ini, aku maw ngucapin
+                Selamat ulang tahun yaa, Di hari yang spesial ini, aku maw ngucapin
                 rasa terimakasii sebanyak banyaknya karena kamu udaa ada dan hadir di hidup akuu.
-                Pas kamu dateng, hari hari aku rasanya jadi jauh lebih bermakna, penuh tawa,
+                Pas kamu dateng, hari hari aku rasanya jadi jauh lebih bermaknanya, penuh cerita ini itu,
                 dan selalu ada alasan buat tersenyum.
               </p>
               <p>
-                Maaff kalo aku suka jadi cowo yang nyusahin buat kamu dalam hal apapun itu.. ntah aku dulu super portektif laa, pokonya banyak peraturan gajelas deh. Aku juga ngerasanya suka jadi mokondo pas sama kamu plss, dikit dikit ditraktir dijajanin, giliran aku aja jarang banget gitu ke kamu, mungkin iya tapi jarang, bukan karena aku perhitungan, tapi emang beneran gaada.. Makasi banyak uda mau bertahan sama sifat kekanak kanakan aku, suka keras kepala juga pas dibilangin, suka ngebentak kamu gitu deh.. im so sowwrryy
+                Maaff yaa kalo aku suka jadi cowo yang nyusahin buat kamu dalam hal apapun itu.. ntah aku dulu super portektif laa, pokonya banyak peraturan gajelas deh. Aku juga ngerasanya suka jadi mokondo pas sama kamu plss, dikit dikit ditraktir dijajanin, giliran aku aja jarang banget gitu ke kamu, mungkin iya tapi jarang, bukan karena aku perhitungan atau pelit, tapi emang beneran gaada.. aku juga sempet sedih pas aku lagi becanda maw ngadoin kamu baju 35 ribuan yang di PS waktu itu terus kamu kaya "ya gitu deh, kaya gatau kamu aja" deymm, padahal aku juga gamau bangett, aku berusaha semaksimal mungkin buat gakeliatan biasa biasa aja pas ulangtahun kamu tapi isokeii ko itu jadi dorongan lagi buat aku kalo aku gabisa kaya gini teruss. Makasi banyak uda mau bertahan sama sifat kekanak kanakan aku, suka keras kepala juga pas dibilangin, suka ngebentak kamu gitu deh.. im so sowwrryy
               </p>
               <p>
-                Apapun impian, cita cita, dan harapan kamu di tahun ini, aku selalu berdoa semoga
-                semuanya dimudahkan dan tercapai. Maaff juga aku gabisa kasi sesuatu yang spesial spesial gitu di hari ulangtahun kamu dan beda kaya cowo diluar sana, padahal emang pengen banget rasanya ngerayain ulangtahun pake sesuatu yang spesial dimana gitu, tapi ya ini aku apaadanya, dan yapss kamu untungnya uda bisa banget nerima aku di keadaan apapun itu. Dan semoga di setiap langkah barumu nanti,
-                aku bisa terus ada di samping kamu buat nemenin dan selalu.
+                Apapun impian, cita cita, dan harapan kamu di tahun ini, aku always berdoa semoga
+                semuanya dimudahkan dan tercapai. Maaff juga aku gabisa kasi sesuatu yang spesial spesial gitu di hari ulangtahun kamu dan beda kaya cowo diluar sana, padahal aku emang pengen banget rasanya ngerayain ulangtahun kamu pake sesuatu yang spesial dimana gitu, tapi ya ini aku apaadanya, dan yapss kamu untungnya uda bisa banget nerima aku di keadaan apapun itu, bukan berarti aku mau disitu situ aja yaa. Dan semoga di setiap langkah kamu yang baru nanti, aku selalu bisa bareng kamu terus sampai kapanpun itu
               </p>
               <p className="pt-2">
                 I love you more than words could ever describe, today, tomorrow, and always. ♡
@@ -174,7 +173,7 @@ export default function MessagesSection() {
             {/* Signature */}
             <div className="pt-4 border-t border-pink-100 dark:border-pink-900/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <div className="font-handwriting text-xs text-zinc-400">
-                Ditulis dengan penuh cintaa,
+                Ditulis pake cinta bangett,
               </div>
               <div className="font-script text-2xl font-bold text-[#d95376] dark:text-[#f472b6]">
                 Your Forever Person ♡
@@ -202,7 +201,7 @@ export default function MessagesSection() {
                       className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors"
                     >
                       <MessageCircle className="w-4 h-4" />
-                      <span>Kirimkan Juga ke WhatsApp Dia 📲</span>
+                      <span>Kirimkan Juga ke WhatsApp Your BF 📲</span>
                     </button>
 
                     <button
