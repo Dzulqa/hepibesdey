@@ -134,9 +134,9 @@ export default function MessagesSection() {
 
             <div className="flex justify-between items-center border-b border-pink-100 dark:border-pink-900/60 pb-4">
               <div>
-                <p className="font-handwriting text-xs text-zinc-400">Untuk Alika Tersayang,</p>
+                <p className="font-handwriting text-xs text-zinc-400">Untuk Alika Tercinta,</p>
                 <h3 className="font-script text-xl sm:text-3xl font-bold text-pink-600 dark:text-pink-400">
-                  Selamat Ulang Tahun, Manisku ♡
+                  Selamat Ulang Tahun, cayangku cintakuu ♡
                 </h3>
               </div>
               <button
