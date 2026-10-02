@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Heart, Maximize2, X, Plus, Trash2, CheckSquare } from "lucide-react";
 import confetti from "canvas-confetti";
 import ScrollReveal, { StaggerContainer, StaggerItem } from "@/components/ScrollReveal";
@@ -58,7 +58,16 @@ export default function GallerySection() {
   ];
 
   // Fixed 6 photos always shown on main page
-  const [userPhotos,    setUserPhotos]    = useState([]);
+  // Load userPhotos dari localStorage supaya tetap ada setelah refresh
+  const [userPhotos, setUserPhotos] = useState(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = localStorage.getItem("alika_gallery_photos");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [activeCategory, setActiveCategory] = useState("semua");
   const [lightboxPhoto,  setLightboxPhoto]  = useState(null);
   const [userLikes,      setUserLikes]      = useState({});
@@ -104,6 +113,16 @@ export default function GallerySection() {
     initialPhotos.forEach((p) => { init[p.id] = p.likes; });
     return init;
   });
+
+  // Sync userPhotos ke localStorage setiap kali berubah
+  useEffect(() => {
+    try {
+      localStorage.setItem("alika_gallery_photos", JSON.stringify(userPhotos));
+    } catch (err) {
+      // localStorage penuh (biasanya karena foto base64 terlalu besar)
+      console.warn("Gagal menyimpan foto ke localStorage:", err);
+    }
+  }, [userPhotos]);
 
   const getLikes = (photo) => likeCounts[photo.id] ?? photo.likes;
 
