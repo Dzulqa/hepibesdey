@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Sparkles, Heart, Gift, Smile, Star } from "lucide-react";
+import { Sparkles, Heart } from "lucide-react";
 import confetti from "canvas-confetti";
 
 export default function HeroSection({ onOpenMessage, onOpenGames }) {

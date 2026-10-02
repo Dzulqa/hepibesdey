@@ -2,18 +2,13 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import {
-  Gift,
   Sparkles,
-  Check,
   Heart,
   Gamepad2,
   RotateCcw,
   Trophy,
   Wand2,
-  Layers,
-  Play,
-  Pause,
-  Award
+  Layers
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
@@ -76,8 +71,6 @@ export default function SurpriseSection() {
       {/* Tab 4: Romantic Spin the Wheel */}
       {activeGameTab === "wheel" && <RomanticSpinWheel />}
 
-      {/* Tab 5: Love Coupons & Gift Box */}
-      {activeGameTab === "coupons" && <LoveCouponsAndGift />}
 
     </section>
   );
@@ -876,151 +869,6 @@ function RomanticSpinWheel() {
           </p>
         </div>
       )}
-    </div>
-  );
-}
-
-/* =========================================================================
-   5. LOVE COUPONS & 3D GIFT BOX (Feature Lengkap)
-   ========================================================================= */
-function LoveCouponsAndGift() {
-  const [giftOpened, setGiftOpened] = useState(false);
-  const [claimedCoupons, setClaimedCoupons] = useState({});
-
-  const coupons = [
-    {
-      id: "coupon_date",
-      title: "Voucher Kencan Bebas Pilih",
-      desc: "Alika bebas tentukan tempat nongkrong, cafe, atau tempat jalan-jalan seharian!",
-      icon: "☕",
-      color: "from-pink-100 to-rose-100 dark:from-pink-950/60 dark:to-rose-950/40",
-    },
-    {
-      id: "coupon_hug",
-      title: "Voucher Peluk Hangat",
-      desc: "Bisa ditukar kapan saja pas lagi capek, butuh sandaran, atau lagi kangen.",
-      icon: "🫂",
-      color: "from-rose-100 to-pink-100 dark:from-rose-950/60 dark:to-pink-950/40",
-    },
-    {
-      id: "coupon_snack",
-      title: "Voucher Jajan & Es Krim",
-      desc: "Bebas pesen es krim, boba, matcha, atau makanan favorit tanpa limit!",
-      icon: "🍦",
-      color: "from-amber-100/60 to-pink-100 dark:from-amber-950/40 dark:to-pink-950/40",
-    },
-    {
-      id: "coupon_pardon",
-      title: "Voucher Bebas Cemberut 100%",
-      desc: "Kartu sakti kalau lagi ngambek, langsung dimaafin dan dibikin ketawa lagi.",
-      icon: "🎀",
-      color: "from-pink-100 to-purple-100/50 dark:from-pink-950/60 dark:to-purple-950/40",
-    },
-  ];
-
-  const handleOpenGift = () => {
-    setGiftOpened(true);
-    confetti({
-      particleCount: 100,
-      spread: 80,
-      origin: { y: 0.5 },
-      colors: ["#f43f5e", "#ec4899", "#fda4af", "#ffe4e6"],
-    });
-  };
-
-  const handleClaim = (id) => {
-    setClaimedCoupons((prev) => ({ ...prev, [id]: true }));
-    confetti({
-      particleCount: 30,
-      spread: 50,
-      origin: { y: 0.6 },
-      colors: ["#fda4af", "#f43f5e"],
-    });
-  };
-
-  return (
-    <div className="space-y-10">
-      {/* 3D Gift Box */}
-      <div className="flex flex-col items-center justify-center">
-        {!giftOpened ? (
-          <div
-            onClick={handleOpenGift}
-            className="cursor-pointer group flex flex-col items-center p-8 bg-white/70 dark:bg-pink-950/30 rounded-3xl border-2 border-dashed border-pink-300 dark:border-pink-800 hover:border-pink-500 transition-all max-w-md w-full shadow-lg hover:shadow-2xl"
-          >
-            <div className="text-7xl group-hover:scale-125 transition-transform animate-bounce">
-              🎁
-            </div>
-            <h3 className="font-script text-3xl font-bold text-pink-600 dark:text-pink-400 mt-4">
-              Buka Kotak Kado Utama ♡
-            </h3>
-            <p className="text-xs text-zinc-500 mt-1">Sentuh atau klik kado untuk melihat isinya!</p>
-            <span className="mt-4 px-5 py-2 rounded-full text-xs font-semibold bg-gradient-to-r from-pink-500 to-rose-400 text-white shadow-md">
-              Buka Sekarang ✨
-            </span>
-          </div>
-        ) : (
-          <div className="w-full max-w-xl bg-gradient-to-br from-pink-50 via-white to-rose-50 dark:from-pink-950/50 dark:via-[#221028] dark:to-pink-950/30 p-8 rounded-3xl border border-pink-200 dark:border-pink-800 shadow-2xl text-center space-y-4 animate-in zoom-in-95">
-            <div className="text-6xl animate-pulse">🎉💖✨</div>
-            <h3 className="font-script text-3xl sm:text-4xl font-bold text-[#d95376] dark:text-[#f472b6]">
-              Happy Birthday, Alika Sayang!
-            </h3>
-            <p className="text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed font-sans max-w-md mx-auto">
-              Hadiah terbesar buat aku adalah bisa kenal kamu dan ada di sisimu. Kupon di bawah ini adalah milikmu seutuhnya!
-            </p>
-            <button
-              onClick={() => setGiftOpened(false)}
-              className="text-xs text-pink-600 dark:text-pink-400 underline"
-            >
-              Tutup kado kembali
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Coupons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {coupons.map((coupon) => {
-          const isClaimed = claimedCoupons[coupon.id];
-          return (
-            <div
-              key={coupon.id}
-              className={`relative p-5 rounded-2xl bg-gradient-to-br ${coupon.color} border border-pink-200 dark:border-pink-800 shadow-sm flex flex-col justify-between overflow-hidden`}
-            >
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{coupon.icon}</span>
-                  <h4 className="text-sm sm:text-base font-bold text-zinc-800 dark:text-zinc-100">
-                    {coupon.title}
-                  </h4>
-                </div>
-                <p className="text-xs text-zinc-600 dark:text-zinc-300">
-                  {coupon.desc}
-                </p>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-dashed border-pink-300 dark:border-pink-800 flex items-center justify-between">
-                <span className="text-[10px] tracking-widest font-mono text-zinc-400 uppercase">
-                  NO EXPIRE
-                </span>
-
-                {isClaimed ? (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300 border border-green-300 flex items-center gap-1">
-                    <Check className="w-3.5 h-3.5" />
-                    <span>TERKLAIM ♡</span>
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => handleClaim(coupon.id)}
-                    className="px-4 py-1.5 rounded-full text-xs font-semibold bg-pink-500 hover:bg-pink-600 text-white shadow-xs active:scale-95 transition-all"
-                  >
-                    Klaim Kupon
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }

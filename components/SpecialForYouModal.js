@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X, Heart, Sparkles, Gift, BookHeart } from "lucide-react";
+import { X, Heart, Gift, BookHeart } from "lucide-react";
 import confetti from "canvas-confetti";
 
 export default function SpecialForYouModal({ isOpen, onClose, onNavigate }) {

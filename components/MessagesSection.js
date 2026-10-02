@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Mail, Heart, Send, CheckCircle2, RefreshCw, MessageCircle, Sparkles } from "lucide-react";
+import { Heart, Send, CheckCircle2, RefreshCw, MessageCircle } from "lucide-react";
 import confetti from "canvas-confetti";
 
 export default function MessagesSection() {

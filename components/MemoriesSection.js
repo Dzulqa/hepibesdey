@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Calendar, Heart, MapPin } from "lucide-react";
-import ScrollReveal, { StaggerContainer, StaggerItem } from "@/components/ScrollReveal";
+import ScrollReveal from "@/components/ScrollReveal";
 
 export default function MemoriesSection() {
   const initialMemories = [
@@ -11,7 +11,7 @@ export default function MemoriesSection() {
       title: "Pulang Ekskul",
       location: "SMP AL-AMANAH",
       image: "/images/couple.jpeg",
-      description: "Iseng forbar karena gasengaja couple pink, eh pas lagi rangkul, ada abang OB sekola dibelakang sambil nyengir haha",
+      description: "Lucu banget ya kita, iseng fotbar gegara gasengaja couple pink, eh pas lagi rangkul, ada abang OB sekola dibelakang sambil nyengir haha",
       tag: "Just Us",
     },
     {
@@ -19,7 +19,7 @@ export default function MemoriesSection() {
       title: "Beli Gulali", 
       location: "Jogja HeHa Sky",
       image: "/images/jogja.jpeg",
-      description: "Lagi jalan sendiri eh tibatiba ada yang gandeng, untung cakep, yauda terus kita beli gulali dehh",
+      description: "Lagi jalan sendiri eh tibatiba ada yang gandeng, untung cangtikk, yaudadeh terus aku nemenin kamu beli guwlali",
       tag: "Just Us",
     },
     {

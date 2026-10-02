@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Sparkles, Heart, Maximize2, X } from "lucide-react";
+import { Maximize2, X } from "lucide-react";
 import confetti from "canvas-confetti";
 import ScrollReveal, { StaggerContainer, StaggerItem } from "@/components/ScrollReveal";
 

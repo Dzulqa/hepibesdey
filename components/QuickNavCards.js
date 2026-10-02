@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Gift, Mail, Clock, Image as ImageIcon, Gamepad2, Sparkles } from "lucide-react";
+import { Gift, Mail, Clock, Image as ImageIcon, Gamepad2 } from "lucide-react";
 
 export default function QuickNavCards({ onSelectTab }) {
   const cards = [

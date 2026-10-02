@@ -89,6 +89,9 @@ export default function Home() {
   }, []);
 
   const handleUnlock = () => {
+    // Scroll ke atas SEBELUM state berubah agar tidak ada layout jump
+    window.scrollTo({ top: 0, behavior: "instant" });
+    document.body.style.overflow = "";
     setIsUnlocked(true);
     if (romanticAudio) {
       romanticAudio.start().then((started) => {
