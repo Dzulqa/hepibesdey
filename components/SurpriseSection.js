@@ -30,7 +30,7 @@ export default function SurpriseSection() {
           <span>Mini Games & Hadiah Spesial</span>
         </span>
         <h2 className="text-3xl sm:text-4xl font-serif-romantic text-zinc-800 dark:text-zinc-100">
-          Arena Main Untuk Awlikaa ♡
+          Arena Main Buwat Alikaa ♡
         </h2>
         <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 max-w-md mx-auto">
           Spesial ulang tahun kamu, yuk mayin game di bawah ini yang uda aku siapin dengan hadiah yang ada
@@ -626,10 +626,10 @@ function MemoryMatchGame() {
       {isWon && (
         <div className="p-4 rounded-2xl bg-pink-100/80 dark:bg-pink-950/60 border border-pink-300 text-center space-y-1 animate-in zoom-in-95">
           <p className="font-script text-2xl font-bold text-pink-600 dark:text-pink-400">
-            Luar Biasa, Semua Kartu Cocok! 🎉
+            Asikk, semua kartunya cocok thebestt! 🎉
           </p>
           <p className="text-xs text-zinc-600 dark:text-zinc-300">
-            Sama seperti kita yang selalu cocok dan saling melengkapi ♡
+            Sama kaya kita yang selalu cocok dan saling melengkapi upss ♡
           </p>
         </div>
       )}
@@ -644,9 +644,9 @@ function RomanticSpinWheel() {
   const prizes = [
     { title: "Ditraktir Boba / Es Krim", icon: "🍦", color: "#fda4af" },
     { title: "Dipijitin pas cape", icon: "💆", color: "#f9a8d4" },
-    { title: "Jalan-jalan kemana aja", icon: "🌆", color: "#fbcfe8" },
+    { title: "Muter muter kemana aja", icon: "🌆", color: "#fbcfe8" },
     { title: "Pelukan unlimited", icon: "🤗", color: "#f472b6" },
-    { title: "1 Permintaan Bebas", icon: "👑", color: "#fb7185" },
+    { title: "1 Permintaan Bebas (Masuk Akal)", icon: "👑", color: "#fb7185" },
     { title: "Mabar Heartopia Seharian", icon: "🎮", color: "#f43f5e" },
   ];
 
@@ -813,10 +813,10 @@ function RomanticSpinWheel() {
     <div className="max-w-md mx-auto bg-white/80 dark:bg-pink-950/30 p-6 sm:p-8 rounded-3xl border border-pink-200/80 dark:border-pink-900/60 backdrop-blur-md shadow-lg space-y-6 text-center">
       <div className="space-y-1">
         <h3 className="text-lg font-bold text-zinc-800 dark:text-zinc-100 flex items-center justify-center gap-1.5">
-          <span>Roda Keberuntungan Romantis</span>
+          <span>Roda Hadiah</span>
           <Trophy className="w-4 h-4 text-amber-400" />
         </h3>
-        <p className="text-xs text-zinc-500">Putar roda dan klaim hadiah apa pun yang terpilih!</p>
+        <p className="text-xs text-zinc-500">Ayoww puter rodanyaa!</p>
       </div>
 
       {/* The Wheel using Canvas */}
@@ -872,7 +872,7 @@ function RomanticSpinWheel() {
             <span>{selectedPrize.title}</span>
           </h4>
           <p className="text-[11px] text-zinc-600 dark:text-zinc-300">
-            Tunjukkan hasil ini ke aku buat klaim hadiahnya sekarang ya! ♡
+            Tunjukin hasilnya ke aku buat klaim hadiahnya! ♡
           </p>
         </div>
       )}
