@@ -1,34 +1,23 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-
-const dataFilePath = path.join(process.cwd(), "data", "messages.json");
-
-function getMessages() {
-  try {
-    if (!fs.existsSync(dataFilePath)) {
-      fs.writeFileSync(dataFilePath, JSON.stringify([]), "utf-8");
-      return [];
-    }
-    const content = fs.readFileSync(dataFilePath, "utf-8");
-    return JSON.parse(content || "[]");
-  } catch (error) {
-    console.error("Error reading messages:", error);
-    return [];
-  }
-}
-
-function saveMessages(messages) {
-  try {
-    fs.writeFileSync(dataFilePath, JSON.stringify(messages, null, 2), "utf-8");
-  } catch (error) {
-    console.error("Error saving messages:", error);
-  }
-}
+import { supabase } from "@/lib/supabase";
 
 export async function GET() {
-  const messages = getMessages();
-  return NextResponse.json({ success: true, messages });
+  try {
+    const { data, error } = await supabase
+      .from("messages")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, messages: data || [] });
+  } catch (error) {
+    console.error("GET messages error:", error);
+    return NextResponse.json(
+      { success: false, error: "Gagal mengambil pesan" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request) {
@@ -43,7 +32,6 @@ export async function POST(request) {
       );
     }
 
-    const messages = getMessages();
     const now = new Date();
     const formattedDate = now.toLocaleDateString("id-ID", {
       day: "numeric",
@@ -56,7 +44,6 @@ export async function POST(request) {
     });
 
     const newMessage = {
-      id: Date.now(),
       sender,
       text: text.trim(),
       reaction: reaction || "❤️",
@@ -66,10 +53,15 @@ export async function POST(request) {
       read: false,
     };
 
-    messages.unshift(newMessage);
-    saveMessages(messages);
+    const { data, error } = await supabase
+      .from("messages")
+      .insert([newMessage])
+      .select()
+      .single();
 
-    return NextResponse.json({ success: true, message: newMessage });
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, message: data });
   } catch (error) {
     console.error("POST messages error:", error);
     return NextResponse.json(
@@ -85,16 +77,33 @@ export async function DELETE(request) {
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ success: false, error: "ID dibutuhkan" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "ID dibutuhkan" },
+        { status: 400 }
+      );
     }
 
-    let messages = getMessages();
-    messages = messages.filter((m) => String(m.id) !== String(id));
-    saveMessages(messages);
+    const { error } = await supabase
+      .from("messages")
+      .delete()
+      .eq("id", id);
 
-    return NextResponse.json({ success: true, messages });
+    if (error) throw error;
+
+    // Ambil sisa pesan setelah hapus
+    const { data, error: fetchError } = await supabase
+      .from("messages")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (fetchError) throw fetchError;
+
+    return NextResponse.json({ success: true, messages: data || [] });
   } catch (error) {
     console.error("DELETE messages error:", error);
-    return NextResponse.json({ success: false, error: "Gagal menghapus pesan" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Gagal menghapus pesan" },
+      { status: 500 }
+    );
   }
 }
