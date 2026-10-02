@@ -643,55 +643,171 @@ function MemoryMatchGame() {
 function RomanticSpinWheel() {
   const prizes = [
     { title: "Ditraktir Boba / Es Krim", icon: "🍦", color: "#fda4af" },
-    { title: "Dipijitin pas cape", icon: "💆‍♀️", color: "#f9a8d4" },
-    { title: "Muter muter kemana aja", icon: "🌆", color: "#fbcfe8" },
-    { title: "Pelukan unlimited", icon: "🫂", color: "#f472b6" },
-    { title: "1 Permintaan Khusus Bebas (Masuk akal)", icon: "👑", color: "#fb7185" },
+    { title: "Dipijitin pas cape", icon: "💆", color: "#f9a8d4" },
+    { title: "Jalan-jalan kemana aja", icon: "🌆", color: "#fbcfe8" },
+    { title: "Pelukan unlimited", icon: "🤗", color: "#f472b6" },
+    { title: "1 Permintaan Bebas", icon: "👑", color: "#fb7185" },
     { title: "Mabar Heartopia Seharian", icon: "🎮", color: "#f43f5e" },
   ];
 
-  const [rotation, setRotation] = useState(0);
+  const canvasRef = useRef(null);
+  const logicalSizeRef = useRef(256); // logical CSS size of canvas
+  // rotationRef tracks the current visual rotation in radians (accumulates over spins)
+  const rotationRef = useRef(0);
   const [isSpinning, setIsSpinning] = useState(false);
   const [selectedPrize, setSelectedPrize] = useState(null);
+  const animFrameRef = useRef(null);
+
+  const numSlices = prizes.length;
+  const sliceAngle = (2 * Math.PI) / numSlices; // in radians
+
+  // Draw wheel on canvas with a given rotation offset (in radians)
+  // Uses logicalSizeRef so coordinates match the CSS-scaled canvas
+  const drawWheel = (rotRad) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const size = logicalSizeRef.current; // logical (CSS) pixels
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = size / 2 - 4;
+
+    ctx.clearRect(0, 0, size, size);
+
+    prizes.forEach((p, idx) => {
+      // Each slice starts at rotRad + idx * sliceAngle
+      const startAngle = rotRad + idx * sliceAngle;
+      const endAngle = startAngle + sliceAngle;
+
+      // Draw slice
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, startAngle, endAngle);
+      ctx.closePath();
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.6)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Draw emoji at the midpoint of the slice, ~62% out from center
+      const midAngle = startAngle + sliceAngle / 2;
+      const textR = r * 0.62;
+      const tx = cx + Math.cos(midAngle) * textR;
+      const ty = cy + Math.sin(midAngle) * textR;
+
+      ctx.save();
+      ctx.translate(tx, ty);
+      ctx.rotate(midAngle + Math.PI / 2); // rotate text to face outward
+      ctx.font = `${Math.round(size * 0.09)}px serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(p.icon, 0, 0);
+      ctx.restore();
+    });
+
+    // Center circle
+    ctx.beginPath();
+    ctx.arc(cx, cy, size * 0.12, 0, 2 * Math.PI);
+    ctx.fillStyle = "#fff";
+    ctx.fill();
+    ctx.strokeStyle = "#f9a8d4";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    // Use logical size from the rendered element
+    const logicalSize = canvas.getBoundingClientRect().width || canvas.clientWidth || 256;
+    logicalSizeRef.current = logicalSize;
+    // Set physical canvas resolution
+    canvas.width = Math.round(logicalSize * dpr);
+    canvas.height = Math.round(logicalSize * dpr);
+    const ctx = canvas.getContext("2d");
+    // Scale context so drawing commands use logical pixels
+    ctx.scale(dpr, dpr);
+    // Initial draw: -π/2 so slice 0 center is at 12 o'clock (top)
+    const initRot = -Math.PI / 2 - sliceAngle / 2;
+    drawWheel(initRot);
+    rotationRef.current = initRot;
+  }, []);
 
   const spin = () => {
     if (isSpinning) return;
     setIsSpinning(true);
     setSelectedPrize(null);
 
-    const prizeCount = prizes.length;
-    const randomPrizeIdx = Math.floor(Math.random() * prizeCount);
-    const sliceAngle = 360 / prizeCount;
-    
-    // We want final angle % 360 to equal (360 - randomPrizeIdx * sliceAngle)
-    const baseTarget = 360 - (randomPrizeIdx * sliceAngle);
-    const extraSpins = 360 * 5;
-    
-    // Calculate degree needed to reach baseTarget from current rotation % 360
-    const currentMod = rotation % 360;
-    let degreeChange = baseTarget - currentMod;
-    if (degreeChange <= 0) {
-      degreeChange += 360;
-    }
-    
-    // Add random offset between -20 and 20 to make it look realistic (not perfectly center)
-    const randomOffset = Math.floor(Math.random() * 40) - 20;
+    // Pick a random prize
+    const randomPrizeIdx = Math.floor(Math.random() * numSlices);
 
-    const targetDegree = rotation + extraSpins + degreeChange + randomOffset;
+    // The pointer is at the top (angle = -π/2 in canvas coords = 270° = -90°).
+    // Slice idx starts at rotationRef.current + idx * sliceAngle.
+    // For prize idx to be under the pointer, the midpoint of slice idx must be at -π/2.
+    // midAngle = finalRotation + randomPrizeIdx * sliceAngle + sliceAngle/2 = -π/2 + 2πk
+    // => finalRotation = -π/2 - randomPrizeIdx * sliceAngle - sliceAngle/2 + 2πk
 
-    setRotation(targetDegree);
+    const extraSpins = 2 * Math.PI * 8; // 8 full extra rotations
+    const currentRot = rotationRef.current;
 
-    setTimeout(() => {
-      setIsSpinning(false);
-      setSelectedPrize(prizes[randomPrizeIdx]);
-      confetti({
-        particleCount: 50,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ["#f43f5e", "#fda4af", "#fbcfe8"],
-      });
-    }, 4000);
+    // Target rotation so that the chosen slice center is at -π/2
+    const targetModRot = -Math.PI / 2 - randomPrizeIdx * sliceAngle - sliceAngle / 2;
+
+    // Small random offset within ±35% of the slice to avoid always landing perfectly centered
+    const safeMargin = sliceAngle * 0.35;
+    const randomOffset = (Math.random() * 2 - 1) * safeMargin;
+
+    // How much do we need to rotate from currentRot to reach targetModRot (mod 2π)?
+    let delta = (targetModRot + randomOffset - currentRot) % (2 * Math.PI);
+    // Make sure we rotate forward (negative direction = clockwise in canvas)
+    // Canvas rotates clockwise when angle increases, but we want the wheel to spin "forward"
+    // so we make delta negative (spin backwards visually = wheel turns clockwise)
+    // Actually we want to subtract rotations (the wheel's content moves clockwise so rotation decreases)
+    // Let's ensure delta is negative and large enough
+    if (delta > 0) delta -= 2 * Math.PI;
+
+    const finalRot = currentRot + delta - extraSpins;
+    rotationRef.current = finalRot;
+
+    // Animate using requestAnimationFrame
+    const duration = 4000; // ms
+    const startTime = performance.now();
+    const startRot = currentRot;
+
+    const easeOut = (t) => 1 - Math.pow(1 - t, 4);
+
+    const animate = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easedProgress = easeOut(progress);
+      const currentAngle = startRot + (finalRot - startRot) * easedProgress;
+      drawWheel(currentAngle);
+
+      if (progress < 1) {
+        animFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        setIsSpinning(false);
+        setSelectedPrize(prizes[randomPrizeIdx]);
+        confetti({
+          particleCount: 60,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ["#f43f5e", "#fda4af", "#fbcfe8"],
+        });
+      }
+    };
+
+    animFrameRef.current = requestAnimationFrame(animate);
   };
+
+  // Cleanup animation on unmount
+  useEffect(() => {
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, []);
 
   return (
     <div className="max-w-md mx-auto bg-white/80 dark:bg-pink-950/30 p-6 sm:p-8 rounded-3xl border border-pink-200/80 dark:border-pink-900/60 backdrop-blur-md shadow-lg space-y-6 text-center">
@@ -703,40 +819,22 @@ function RomanticSpinWheel() {
         <p className="text-xs text-zinc-500">Putar roda dan klaim hadiah apa pun yang terpilih!</p>
       </div>
 
-      {/* The Wheel */}
+      {/* The Wheel using Canvas */}
       <div className="relative w-56 h-56 sm:w-64 sm:h-64 mx-auto flex items-center justify-center">
-        {/* Pointer Arrow on Top */}
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-20 w-0 h-0 border-l-[10px] sm:border-l-[12px] border-l-transparent border-r-[10px] sm:border-r-[12px] border-r-transparent border-t-[18px] sm:border-t-[20px] border-t-pink-600 drop-shadow-md" />
+        {/* Pointer Arrow at Top */}
+        <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-20 w-0 h-0
+          border-l-[10px] sm:border-l-[12px] border-l-transparent
+          border-r-[10px] sm:border-r-[12px] border-r-transparent
+          border-t-[18px] sm:border-t-[20px] border-t-pink-600 drop-shadow-md" />
 
-        {/* Outer Wheel Ring */}
-        <div
-          style={{
-            transform: `rotate(${rotation}deg)`,
-            transition: isSpinning ? "transform 4s cubic-bezier(0.15, 0.9, 0.2, 1)" : "none",
-          }}
-          className="w-full h-full rounded-full border-4 border-white dark:border-pink-900 shadow-xl overflow-hidden relative"
-        >
-          {prizes.map((p, idx) => {
-            const angle = (360 / prizes.length) * idx;
-            return (
-              <div
-                key={idx}
-                style={{
-                  transform: `rotate(${angle}deg)`,
-                  backgroundColor: p.color,
-                  clipPath: "polygon(50% 50%, 0 0, 100% 0)",
-                }}
-                className="absolute inset-0 flex items-start justify-center pt-3 text-zinc-800"
-              >
-                <div className="text-center font-bold text-[10px] transform -rotate-90 origin-bottom mt-2">
-                  <span className="text-base block">{p.icon}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {/* Canvas Wheel */}
+        <canvas
+          ref={canvasRef}
+          style={{ width: "100%", height: "100%", borderRadius: "50%" }}
+          className="shadow-xl border-4 border-white dark:border-pink-900"
+        />
 
-        {/* Center Spin Button */}
+        {/* Center Spin Button overlaid */}
         <button
           onClick={spin}
           disabled={isSpinning}
@@ -747,9 +845,27 @@ function RomanticSpinWheel() {
         </button>
       </div>
 
+      {/* Prize list legend */}
+      <div className="grid grid-cols-2 gap-1.5 text-left">
+        {prizes.map((p, idx) => (
+          <div
+            key={idx}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-medium border transition-all ${
+              selectedPrize?.title === p.title
+                ? "border-pink-400 bg-pink-100 dark:bg-pink-900/60 scale-105 shadow-sm text-pink-700 dark:text-pink-300 font-bold"
+                : "border-pink-100 dark:border-pink-900/40 bg-white/60 dark:bg-pink-950/20 text-zinc-600 dark:text-zinc-400"
+            }`}
+          >
+            <span style={{ background: p.color }} className="w-3 h-3 rounded-full flex-shrink-0" />
+            <span className="text-sm">{p.icon}</span>
+            <span className="leading-tight truncate">{p.title}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Result Display */}
       {selectedPrize && (
-        <div className="p-4 rounded-2xl bg-pink-100/80 dark:bg-pink-950/60 border border-pink-200 animate-in zoom-in-95 space-y-1">
+        <div className="p-4 rounded-2xl bg-pink-100/80 dark:bg-pink-950/60 border border-pink-300 animate-in zoom-in-95 space-y-1">
           <p className="text-xs text-zinc-500 font-semibold">SELAMAT! KAMU DAPET:</p>
           <h4 className="font-script text-2xl font-bold text-pink-600 dark:text-pink-400 flex items-center justify-center gap-1.5">
             <span>{selectedPrize.icon}</span>
