@@ -1,4 +1,5 @@
 import "./globals.css";
+import SmoothScroll from "@/components/SmoothScroll";
 
 export const viewport = {
   width: "device-width",
@@ -18,7 +19,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="id" className="scroll-smooth">
       <body className="min-h-screen flex flex-col antialiased selection:bg-pink-300 selection:text-pink-900">
-        {children}
+        <SmoothScroll>
+          {children}
+        </SmoothScroll>
       </body>
     </html>
   );
