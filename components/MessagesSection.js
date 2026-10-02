@@ -3,6 +3,13 @@
 import React, { useState } from "react";
 import { Heart, Send, CheckCircle2, RefreshCw, MessageCircle } from "lucide-react";
 import confetti from "canvas-confetti";
+import { createClient } from "@supabase/supabase-js";
+
+// Direct Supabase client — bypass API route
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export default function MessagesSection() {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,16 +38,37 @@ export default function MessagesSection() {
     setLastSubmittedText(content);
 
     try {
-      // 1. Post to Server API
-      await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // Insert langsung ke Supabase dari browser
+      const now = new Date();
+      const formattedDate = now.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+      const formattedTime = now.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const { error } = await supabase.from("messages").insert([
+        {
           sender: "Alika",
           text: content,
           reaction: selectedEmoji,
-        }),
-      });
+          date: formattedDate,
+          time: formattedTime,
+          timestamp: `${formattedDate} ${formattedTime}`,
+          read: false,
+        },
+      ]);
+
+      if (error) {
+        console.error("Supabase insert error:", error);
+        alert(`⚠️ Gagal simpan pesan: ${error.message}`);
+        return;
+      }
+
+      console.log("✅ Pesan berhasil disimpan ke Supabase!");
 
       // 2. Also keep in localStorage for offline
       if (typeof window !== "undefined") {
@@ -64,8 +92,7 @@ export default function MessagesSection() {
       });
     } catch (err) {
       console.error("Gagal mengirim pesan:", err);
-      // Fallback: still show success locally
-      setHasReplied(true);
+      alert(`⚠️ Error: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
