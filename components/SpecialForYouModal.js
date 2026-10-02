@@ -75,8 +75,8 @@ export default function SpecialForYouModal({ isOpen, onClose, onNavigate }) {
           >
             <Gift className="w-5 h-5 text-rose-500 shrink-0" />
             <div>
-              <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Kado & Kupon</p>
-              <p className="text-[10px] text-zinc-400">Klaim kupon cinta</p>
+              <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Gift & Games</p>
+              <p className="text-[10px] text-zinc-400">Klaim hadiah yang ada</p>
             </div>
           </button>
         </div>
