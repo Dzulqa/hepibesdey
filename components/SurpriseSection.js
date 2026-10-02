@@ -291,14 +291,46 @@ function LoveCatcherGame() {
   const [items, setItems] = useState([]);
   const gameAreaRef = useRef(null);
   const requestRef = useRef();
+  const lastTimeRef = useRef(null); // for delta-time
+  const basketXRef = useRef(50);   // mirror of basketX for use inside rAF
+  const keysRef = useRef({ left: false, right: false }); // keyboard state
+
+  const TYPES = [
+    { emoji: "💖", pts: 10, type: "heart" },
+    { emoji: "💐", pts: 20, type: "flower" },
+    { emoji: "🎁", pts: 30, type: "gift" },
+    { emoji: "🎀", pts: 15, type: "ribbon" },
+    { emoji: "💔", pts: -15, type: "bad" },
+  ];
+
+  // speed is expressed as % of game-area height per second
+  // → 35–55 %/s means an item crosses the 100% height in ~1.8–2.9 s
+  const makeItem = (startY = 0) => ({
+    id: Math.random(),
+    x: Math.random() * 82 + 5,      // 5% – 87%
+    y: startY,
+    speed: Math.random() * 20 + 35, // 35–55 %/s
+    ...TYPES[Math.floor(Math.random() * TYPES.length)],
+  });
 
   const startGame = () => {
+    // Pre-spawn a wave of items scattered at different heights so the
+    // game area is immediately populated — no waiting at the start.
+    const initial = Array.from({ length: 6 }, (_, i) =>
+      makeItem(Math.random() * 55) // spread across top 0–55%
+    );
+    setItems(initial);
+    lastTimeRef.current = null;
     setIsPlaying(true);
     setScore(0);
     setTimeLeft(25);
     setGameOver(false);
-    setItems([]);
   };
+
+  // Sync basketXRef whenever state changes so rAF can read it without stale closure
+  useEffect(() => {
+    basketXRef.current = basketX;
+  }, [basketX]);
 
   // Timer countdown
   useEffect(() => {
@@ -328,41 +360,33 @@ function LoveCatcherGame() {
   useEffect(() => {
     if (!isPlaying) return;
 
-    let spawnTimer = setInterval(() => {
-      const types = [
-        { emoji: "💖", pts: 10, type: "heart" },
-        { emoji: "💐", pts: 20, type: "flower" },
-        { emoji: "🎁", pts: 30, type: "gift" },
-        { emoji: "🎀", pts: 15, type: "ribbon" },
-        { emoji: "💔", pts: -15, type: "bad" },
-      ];
-      const randomType = types[Math.floor(Math.random() * types.length)];
-      const newItem = {
-        id: Math.random(),
-        x: Math.random() * 85 + 5,
-        y: 0,
-        speed: Math.random() * 0.1 + 1.7,
-        ...randomType,
-      };
-      setItems((prev) => [...prev, newItem]);
-    }, 400);
+    // Spawn a new item every 600 ms
+    const spawnTimer = setInterval(() => {
+      setItems((prev) => [...prev, makeItem(0)]);
+    }, 600);
 
-    const updateGame = () => {
+    // Delta-time game loop
+    const updateGame = (timestamp) => {
+      if (lastTimeRef.current === null) {
+        lastTimeRef.current = timestamp;
+      }
+      const dt = Math.min(timestamp - lastTimeRef.current, 100); // cap at 100ms to avoid huge jumps
+      lastTimeRef.current = timestamp;
+
       setItems((prevItems) => {
         const next = [];
         for (const item of prevItems) {
-          const nextY = item.y + item.speed;
-          // Check collision with basket at bottom (y ~ 85-95%)
-          if (nextY >= 82 && nextY <= 94) {
-            const distance = Math.abs(item.x - basketX);
-            if (distance < 14) {
+          const nextY = item.y + (item.speed * dt) / 1000; // % per second → per ms
+          // Collision zone: basket sits at ~88% (bottom: 12px in a 320px area ≈ ~96% top)
+          if (nextY >= 80 && nextY <= 96) {
+            const distance = Math.abs(item.x - basketXRef.current);
+            if (distance < 13) {
               // Caught!
               setScore((s) => Math.max(0, s + item.pts));
-              continue; // Don't keep item
+              continue;
             }
           }
-
-          if (nextY < 100) {
+          if (nextY < 102) {
             next.push({ ...item, y: nextY });
           }
         }
@@ -378,7 +402,7 @@ function LoveCatcherGame() {
       clearInterval(spawnTimer);
       cancelAnimationFrame(requestRef.current);
     };
-  }, [isPlaying, basketX]);
+  }, [isPlaying]);
 
   // Handle basket movement via mouse / touch
   const handleMouseMove = (e) => {
@@ -395,6 +419,55 @@ function LoveCatcherGame() {
     setBasketX(Math.max(8, Math.min(92, x)));
   };
 
+  // Handle basket movement via keyboard (ArrowLeft / ArrowRight / A / D)
+  useEffect(() => {
+    const SPEED = 55; // % per second
+    let lastKbTime = null;
+    let rafId;
+
+    const onKeyDown = (e) => {
+      if (e.key === "ArrowLeft"  || e.key === "a" || e.key === "A") {
+        keysRef.current.left = true;
+        e.preventDefault();
+      }
+      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+        keysRef.current.right = true;
+        e.preventDefault();
+      }
+    };
+    const onKeyUp = (e) => {
+      if (e.key === "ArrowLeft"  || e.key === "a" || e.key === "A") keysRef.current.left  = false;
+      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keysRef.current.right = false;
+    };
+
+    const loop = (ts) => {
+      if (lastKbTime === null) lastKbTime = ts;
+      const dt = Math.min(ts - lastKbTime, 100);
+      lastKbTime = ts;
+
+      if (keysRef.current.left || keysRef.current.right) {
+        const dir = (keysRef.current.right ? 1 : 0) - (keysRef.current.left ? 1 : 0);
+        setBasketX((prev) => {
+          const next = prev + dir * SPEED * (dt / 1000);
+          const clamped = Math.max(8, Math.min(92, next));
+          basketXRef.current = clamped;
+          return clamped;
+        });
+      }
+      rafId = requestAnimationFrame(loop);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup",   onKeyUp);
+    rafId = requestAnimationFrame(loop);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup",   onKeyUp);
+      cancelAnimationFrame(rafId);
+    };
+  }, []);
+
   return (
     <div className="max-w-xl mx-auto bg-white/80 dark:bg-pink-950/30 p-6 rounded-3xl border border-pink-200/80 dark:border-pink-900/60 backdrop-blur-md shadow-lg space-y-4 text-center">
 
@@ -404,7 +477,7 @@ function LoveCatcherGame() {
             <span>Tangkap Hati & Bunga Cinta</span>
             <Heart className="w-4 h-4 fill-pink-500 text-pink-500 animate-pulse" />
           </h3>
-          <p className="text-[11px] text-zinc-500">Geser keranjang untuk menangkap hadiah!</p>
+          <p className="text-[11px] text-zinc-500">Geser keranjang atau tekan ← → untuk menangkap hadiah!</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -473,7 +546,7 @@ function LoveCatcherGame() {
               top: `${item.y}%`,
               transform: "translate(-50%, -50%)",
             }}
-            className="absolute text-2xl pointer-events-none transition-transform"
+            className="absolute text-2xl pointer-events-none"
           >
             {item.emoji}
           </div>
