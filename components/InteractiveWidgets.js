@@ -16,12 +16,14 @@ export default function InteractiveWidgets({ isMusicPlaying, toggleMusic }) {
   });
 
   // Target birthday date (can be changed by user)
-  const [targetDateStr, setTargetDateStr] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("alika_birthday") || "2026-10-05";
-    }
-    return "2026-10-05";
-  });
+  // Selalu inisialisasi dengan nilai statis agar SSR & client match (hindari hydration error)
+  const [targetDateStr, setTargetDateStr] = useState("2026-10-05");
+
+  // Load dari localStorage setelah mount (client-side only)
+  useEffect(() => {
+    const saved = localStorage.getItem("alika_birthday");
+    if (saved) setTargetDateStr(saved);
+  }, []);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Heart, Maximize2, X, Plus, Trash2, CheckSquare } from "lucide-react";
 import confetti from "canvas-confetti";
 import ScrollReveal, { StaggerContainer, StaggerItem } from "@/components/ScrollReveal";
@@ -59,15 +59,20 @@ export default function GallerySection() {
 
   // Fixed 6 photos always shown on main page
   // Load userPhotos dari localStorage supaya tetap ada setelah refresh
-  const [userPhotos, setUserPhotos] = useState(() => {
-    if (typeof window === "undefined") return [];
+  const [userPhotos, setUserPhotos] = useState([]);
+  const [mounted, setMounted] = useState(false);
+
+  // Load dari localStorage hanya setelah mount (client-side only)
+  // agar tidak terjadi hydration mismatch antara SSR dan client
+  useEffect(() => {
+    setMounted(true);
     try {
       const saved = localStorage.getItem("alika_gallery_photos");
-      return saved ? JSON.parse(saved) : [];
+      if (saved) setUserPhotos(JSON.parse(saved));
     } catch {
-      return [];
+      // ignore
     }
-  });
+  }, []);
   const [activeCategory, setActiveCategory] = useState("semua");
   const [lightboxPhoto,  setLightboxPhoto]  = useState(null);
   const [userLikes,      setUserLikes]      = useState({});
@@ -116,13 +121,48 @@ export default function GallerySection() {
 
   // Sync userPhotos ke localStorage setiap kali berubah
   useEffect(() => {
+    if (!mounted) return;
     try {
       localStorage.setItem("alika_gallery_photos", JSON.stringify(userPhotos));
     } catch (err) {
       // localStorage penuh (biasanya karena foto base64 terlalu besar)
       console.warn("Gagal menyimpan foto ke localStorage:", err);
     }
-  }, [userPhotos]);
+  }, [userPhotos, mounted]);
+
+  const scrollGridRef = useRef(null);
+
+  // Pause Lenis smooth scroll & kunci scroll body saat modal terbuka
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isAnyModalOpen = Boolean(showAllModal || lightboxPhoto || pendingUpload);
+    const lenis = window.__lenis;
+    if (isAnyModalOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      if (lenis) lenis.stop();
+      return () => {
+        document.body.style.overflow = prevOverflow;
+        if (lenis) lenis.start();
+      };
+    } else {
+      if (lenis) lenis.start();
+    }
+  }, [showAllModal, lightboxPhoto, pendingUpload]);
+
+  // Pastikan wheel events di grid foto tidak memicu scroll di parent / window / Lenis
+  useEffect(() => {
+    const el = scrollGridRef.current;
+    if (!el) return;
+    const handleWheel = (e) => {
+      e.stopPropagation();
+    };
+    el.addEventListener("wheel", handleWheel, { passive: true });
+    return () => {
+      el.removeEventListener("wheel", handleWheel);
+    };
+  }, [showAllModal]);
+
 
   const getLikes = (photo) => likeCounts[photo.id] ?? photo.likes;
 
@@ -384,8 +424,8 @@ export default function GallerySection() {
 
       {/* Lightbox Modal (z-[60] so it renders above the all-photos modal) */}
       {lightboxPhoto && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="relative max-w-2xl w-full bg-white dark:bg-[#201024] p-4 rounded-3xl border border-pink-200 dark:border-pink-800 shadow-2xl space-y-3">
+        <div data-lenis-prevent="true" className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200 lenis-prevent">
+          <div data-lenis-prevent="true" className="relative max-w-2xl w-full bg-white dark:bg-[#201024] p-4 rounded-3xl border border-pink-200 dark:border-pink-800 shadow-2xl space-y-3 lenis-prevent">
             <button
               onClick={() => setLightboxPhoto(null)}
               className="absolute top-4 right-4 p-1.5 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
@@ -429,8 +469,8 @@ export default function GallerySection() {
 
       {/* Upload Form Modal */}
       {pendingUpload && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md bg-white dark:bg-[#1a0d22] rounded-3xl border border-pink-200 dark:border-pink-800 shadow-2xl overflow-hidden">
+        <div data-lenis-prevent="true" className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 lenis-prevent">
+          <div data-lenis-prevent="true" className="relative w-full max-w-md bg-white dark:bg-[#1a0d22] rounded-3xl border border-pink-200 dark:border-pink-800 shadow-2xl overflow-hidden lenis-prevent">
 
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-pink-100 dark:border-pink-900/60">
@@ -516,77 +556,102 @@ export default function GallerySection() {
 
       {/* All Photos Modal */}
       {showAllModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
-          onClick={(e) => { if (e.target === e.currentTarget && !selectMode) setShowAllModal(false); }}
-        >
-          <div className="relative w-full max-w-5xl mx-auto my-6 px-4 pb-6">
-            <div className="bg-white dark:bg-[#1a0d22] rounded-3xl border border-pink-200 dark:border-pink-900 shadow-2xl overflow-hidden">
+        <>
+          {/* Backdrop — klik di luar modal untuk tutup */}
+          <div
+            data-lenis-prevent="true"
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 lenis-prevent"
+            onClick={() => { if (!selectMode) setShowAllModal(false); }}
+            onWheel={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            onTouchMove={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          />
 
-              {/* Modal Header */}
-              <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white/95 dark:bg-[#1a0d22]/95 backdrop-blur-sm border-b border-pink-100 dark:border-pink-900/60">
-                <div>
-                  <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
-                    <span>📸</span>
-                    {selectMode
-                      ? <span className="text-red-500">{selectedIds.size > 0 ? `${selectedIds.size} foto dipilih` : "Pilih foto untuk dihapus"}</span>
-                      : "Semua Foto Kita"
-                    }
-                  </h3>
-                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
-                    {selectMode ? "Ketuk foto yang diupload untuk memilih · Foto asli terlindungi 🔒" : `${allPhotos.length} foto tersimpan ♡`}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {userPhotos.length > 0 && (
-                    selectMode ? (
-                      <button onClick={exitSelectMode} className="px-4 py-2 rounded-full text-xs font-semibold border border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition">
-                        Batal
-                      </button>
-                    ) : (
-                      <button onClick={enterSelectMode} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-red-50 dark:bg-red-900/30 text-red-500 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/50 transition">
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Pilih &amp; Hapus
-                      </button>
-                    )
-                  )}
-                  <button onClick={() => { setShowAllModal(false); exitSelectMode(); }} className="p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-pink-50 dark:hover:bg-pink-900/40 transition-colors">
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
+          {/* Modal Box — posisi absolute di tengah layar, scroll ada di dalam sini */}
+          <div
+            data-lenis-prevent="true"
+            className="fixed z-50 bg-white dark:bg-[#1a0d22] rounded-3xl border border-pink-200 dark:border-pink-900 shadow-2xl flex flex-col lenis-prevent"
+            style={{
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "min(95vw, 64rem)",
+              height: "90vh",
+              maxHeight: "90vh",
+              overflow: "hidden",
+            }}
+          >
+            {/* Header — tetap di atas */}
+            <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 bg-white dark:bg-[#1a0d22] border-b border-pink-100 dark:border-pink-900/60 rounded-t-3xl">
+              <div>
+                <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
+                  <span>📸</span>
+                  {selectMode
+                    ? <span className="text-red-500">{selectedIds.size > 0 ? `${selectedIds.size} foto dipilih` : "Pilih foto untuk dihapus"}</span>
+                    : "Semua Foto Kita"
+                  }
+                </h3>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+                  {selectMode ? "Ketuk foto yang diupload untuk memilih · Foto asli terlindungi 🔒" : `${allPhotos.length} foto tersimpan ♡`}
+                </p>
               </div>
-
-              {/* Category Filter (hidden in select mode) */}
-              {!selectMode && (
-                <div className="flex flex-wrap gap-2 px-6 py-4 border-b border-pink-100 dark:border-pink-900/40">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setModalCategory(cat.id)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
-                        modalCategory === cat.id
-                          ? "bg-pink-500 text-white shadow-sm"
-                          : "bg-pink-50 dark:bg-pink-950/40 text-zinc-600 dark:text-zinc-300 border border-pink-200/80 dark:border-pink-900/60 hover:bg-pink-100"
-                      }`}
-                    >
-                      {cat.label}
-                      <span className="ml-1.5 text-[10px] opacity-70">
-                        ({cat.id === "semua" ? allPhotos.length : allPhotos.filter((p) => p.category === cat.id).length})
-                      </span>
+              <div className="flex items-center gap-2">
+                {userPhotos.length > 0 && (
+                  selectMode ? (
+                    <button onClick={exitSelectMode} className="px-4 py-2 rounded-full text-xs font-semibold border border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition">
+                      Batal
                     </button>
-                  ))}
-                </div>
-              )}
+                  ) : (
+                    <button onClick={enterSelectMode} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-red-50 dark:bg-red-900/30 text-red-500 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/50 transition">
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Pilih &amp; Hapus
+                    </button>
+                  )
+                )}
+                <button onClick={() => { setShowAllModal(false); exitSelectMode(); }} className="p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-pink-50 dark:hover:bg-pink-900/40 transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
 
-              {/* Select mode hint bar */}
-              {selectMode && (
-                <div className="flex items-center gap-2 px-6 py-3 bg-red-50/60 dark:bg-red-950/20 border-b border-red-100 dark:border-red-900/30">
-                  <CheckSquare className="w-4 h-4 text-red-400 shrink-0" />
-                  <p className="text-xs text-red-500 dark:text-red-400">Hanya foto yang kamu upload yang bisa dipilih. Foto asli dilindungi.</p>
-                </div>
-              )}
+            {/* Category Filter — tetap di bawah header */}
+            {!selectMode && (
+              <div className="flex-shrink-0 flex flex-wrap gap-2 px-6 py-4 border-b border-pink-100 dark:border-pink-900/40">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setModalCategory(cat.id)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                      modalCategory === cat.id
+                        ? "bg-pink-500 text-white shadow-sm"
+                        : "bg-pink-50 dark:bg-pink-950/40 text-zinc-600 dark:text-zinc-300 border border-pink-200/80 dark:border-pink-900/60 hover:bg-pink-100"
+                    }`}
+                  >
+                    {cat.label}
+                    <span className="ml-1.5 text-[10px] opacity-70">
+                      ({cat.id === "semua" ? allPhotos.length : allPhotos.filter((p) => p.category === cat.id).length})
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
 
-              {/* Modal Photo Grid */}
+            {/* Select mode hint */}
+            {selectMode && (
+              <div className="flex-shrink-0 flex items-center gap-2 px-6 py-3 bg-red-50/60 dark:bg-red-950/20 border-b border-red-100 dark:border-red-900/30">
+                <CheckSquare className="w-4 h-4 text-red-400 shrink-0" />
+                <p className="text-xs text-red-500 dark:text-red-400">Hanya foto yang kamu upload yang bisa dipilih. Foto asli dilindungi.</p>
+              </div>
+            )}
+
+            {/* ===== SCROLLABLE PHOTO GRID ===== */}
+            <div
+              ref={scrollGridRef}
+              data-lenis-prevent="true"
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain lenis-prevent"
+              style={{
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
               <div className="p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {(selectMode ? allPhotos : modalFilteredPhotos).map((photo) => (
                   <PhotoCard key={photo.id} photo={photo} inModal={true} />
@@ -598,25 +663,25 @@ export default function GallerySection() {
                   </div>
                 )}
               </div>
-
-              {/* Floating delete action bar */}
-              {selectMode && selectedIds.size > 0 && (
-                <div className="sticky bottom-0 flex items-center justify-between px-6 py-4 bg-white/95 dark:bg-[#1a0d22]/95 backdrop-blur-sm border-t border-red-100 dark:border-red-900/40 shadow-lg">
-                  <span className="text-sm font-semibold text-red-500">{selectedIds.size} foto dipilih</span>
-                  <button
-                    onClick={handleBulkDeleteClick}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-white bg-red-500 hover:bg-red-600 active:scale-95 transition shadow-md shadow-red-300/40"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Hapus {selectedIds.size} Foto
-                  </button>
-                </div>
-              )}
-
             </div>
+
+            {/* Delete action bar — tetap di bawah */}
+            {selectMode && selectedIds.size > 0 && (
+              <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 bg-white dark:bg-[#1a0d22] border-t border-red-100 dark:border-red-900/40 shadow-lg rounded-b-3xl">
+                <span className="text-sm font-semibold text-red-500">{selectedIds.size} foto dipilih</span>
+                <button
+                  onClick={handleBulkDeleteClick}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-white bg-red-500 hover:bg-red-600 active:scale-95 transition shadow-md shadow-red-300/40"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Hapus {selectedIds.size} Foto
+                </button>
+              </div>
+            )}
           </div>
-        </div>
+        </>
       )}
+
 
       {/* Warning Dialog >5 photos */}
       {warnBulk && (
