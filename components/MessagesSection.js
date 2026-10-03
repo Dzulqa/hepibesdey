@@ -50,36 +50,51 @@ export default function MessagesSection() {
         minute: "2-digit",
       });
 
-      const { error } = await supabase.from("messages").insert([
-        {
-          sender: "Alika",
-          text: content,
-          reaction: selectedEmoji,
-          date: formattedDate,
-          time: formattedTime,
-          timestamp: `${formattedDate} ${formattedTime}`,
-          read: false,
-        },
-      ]);
+      const messagePayload = {
+        sender: "Alika",
+        text: content,
+        reaction: selectedEmoji,
+        date: formattedDate,
+        time: formattedTime,
+        timestamp: `${formattedDate} ${formattedTime}`,
+        read: false,
+      };
 
-      if (error) {
-        console.error("Supabase insert error:", error);
-        alert(`⚠️ Gagal simpan pesan: ${error.message}`);
-        return;
+      let sentToCloud = false;
+
+      // Coba kirim ke Supabase jika online
+      if (typeof navigator !== "undefined" && navigator.onLine) {
+        try {
+          const { error } = await supabase.from("messages").insert([messagePayload]);
+          if (!error) {
+            sentToCloud = true;
+            console.log("✅ Pesan berhasil disimpan ke Supabase!");
+          } else {
+            console.warn("Supabase insert error (disimpan offline):", error);
+          }
+        } catch (netErr) {
+          console.warn("Network error during Supabase insert (disimpan offline):", netErr);
+        }
       }
 
-      console.log("✅ Pesan berhasil disimpan ke Supabase!");
-
-      // 2. Also keep in localStorage for offline
+      // Selalu simpan di localStorage
       if (typeof window !== "undefined") {
         const existing = JSON.parse(localStorage.getItem("alika_replies") || "[]");
         existing.unshift({
           text: content,
           reaction: selectedEmoji,
-          date: new Date().toLocaleDateString("id-ID"),
-          time: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+          date: formattedDate,
+          time: formattedTime,
         });
         localStorage.setItem("alika_replies", JSON.stringify(existing));
+
+        // Jika belum terkirim ke Supabase, antrekan untuk auto-sync saat online
+        if (!sentToCloud) {
+          const pending = JSON.parse(localStorage.getItem("alika_pending_messages") || "[]");
+          pending.push(messagePayload);
+          localStorage.setItem("alika_pending_messages", JSON.stringify(pending));
+          console.log("📦 Pesan disimpan di antrean offline lokal!");
+        }
       }
 
       setHasReplied(true);
@@ -92,7 +107,19 @@ export default function MessagesSection() {
       });
     } catch (err) {
       console.error("Gagal mengirim pesan:", err);
-      alert(`⚠️ Error: ${err.message}`);
+      // Simpan darurat ke local storage jika ada exception tak terduga
+      if (typeof window !== "undefined") {
+        const existing = JSON.parse(localStorage.getItem("alika_replies") || "[]");
+        existing.unshift({
+          text: content,
+          reaction: selectedEmoji,
+          date: new Date().toLocaleDateString("id-ID"),
+          time: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+        });
+        localStorage.setItem("alika_replies", JSON.stringify(existing));
+      }
+      setHasReplied(true);
+      setReplyText("");
     } finally {
       setIsSubmitting(false);
     }

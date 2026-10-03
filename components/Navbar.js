@@ -36,8 +36,13 @@ export default function Navbar({
         {/* Brand Logo */}
         <div 
           onClick={() => handleNavClick("home")} 
-          className="cursor-pointer group flex items-center gap-1.5"
+          className="cursor-pointer group flex items-center gap-2"
         >
+          <img
+            src="/images/barbie-icon.png"
+            alt="Alika Barbie Icon"
+            className="w-8 h-8 rounded-full border border-pink-200 shadow-sm object-cover group-hover:rotate-6 transition-transform duration-300"
+          />
           <span className="font-script text-3xl font-bold text-pink-600 group-hover:scale-105 transition-transform duration-200">
             Alika
           </span>
