@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Download, X, Smartphone, Monitor, Apple, CheckCircle2, HelpCircle } from "lucide-react";
+import { Download, X, Smartphone, Monitor, Apple, HelpCircle } from "lucide-react";
 
 export default function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
+  // Default true to prevent flash-of-banner before detection completes (safe default)
+  const [isStandalone, setIsStandalone] = useState(true);
   const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [activePlatformTab, setActivePlatformTab] = useState("android");
@@ -17,15 +18,28 @@ export default function PWAInstallPrompt() {
     const checkStandalone = () => {
       const isStandaloneMode =
         window.matchMedia("(display-mode: standalone)").matches ||
-        window.navigator.standalone === true;
+        window.navigator.standalone === true ||
+        document.referrer.startsWith("android-app://");
       setIsStandalone(isStandaloneMode);
+      // Jika standalone, tandai sebagai sudah terinstall
+      if (isStandaloneMode) {
+        setIsAlreadyInstalled(true);
+        localStorage.setItem("pwa-alika-installed", "true");
+      }
     };
 
     checkStandalone();
 
-    // 1b. Check localStorage for previously installed flag
+    // Listen jika display-mode berubah (edge case saat switch window)
+    const mq = window.matchMedia("(display-mode: standalone)");
+    mq.addEventListener("change", checkStandalone);
+
+    // 1b. Check localStorage untuk flag sudah installed / sudah dismiss
     if (localStorage.getItem("pwa-alika-installed") === "true") {
       setIsAlreadyInstalled(true);
+    }
+    if (localStorage.getItem("pwa-alika-banner-dismissed") === "true") {
+      setIsDismissed(true);
     }
 
     // 2. Register Service Worker reliably (check document.readyState)
@@ -82,6 +96,13 @@ export default function PWAInstallPrompt() {
 
     // 6. External event to open install modal or prompt (e.g. from Navbar)
     const handleCustomTrigger = () => {
+      // Jika sudah standalone/installed, jangan tampilkan apapun
+      const isCurrentlyStandalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+      if (isCurrentlyStandalone || localStorage.getItem("pwa-alika-installed") === "true") {
+        return;
+      }
       if (window.deferredPWAInstallPrompt) {
         window.deferredPWAInstallPrompt.prompt().then((res) => {
           if (res.outcome === "accepted") {
@@ -96,6 +117,7 @@ export default function PWAInstallPrompt() {
     window.addEventListener("trigger-pwa-install", handleCustomTrigger);
 
     return () => {
+      mq.removeEventListener("change", checkStandalone);
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleAppInstalled);
       window.removeEventListener("trigger-pwa-install", handleCustomTrigger);
@@ -120,6 +142,12 @@ export default function PWAInstallPrompt() {
       // If native prompt is not available, show step-by-step interactive guide
       setShowGuideModal(true);
     }
+  };
+
+  // Helper: dismiss banner + persist ke localStorage agar tidak muncul lagi
+  const handleDismiss = () => {
+    setIsDismissed(true);
+    localStorage.setItem("pwa-alika-banner-dismissed", "true");
   };
 
   // If already opened as standalone app OR already installed, don't show the bottom banner
@@ -169,7 +197,7 @@ export default function PWAInstallPrompt() {
                   <span>Panduan</span>
                 </button>
                 <button
-                  onClick={() => setIsDismissed(true)}
+                  onClick={handleDismiss}
                   className="text-xs text-zinc-400 hover:text-zinc-600 font-medium px-2 py-1.5 transition-colors"
                 >
                   Nanti Saja
@@ -177,7 +205,7 @@ export default function PWAInstallPrompt() {
               </div>
             </div>
             <button
-              onClick={() => setIsDismissed(true)}
+              onClick={handleDismiss}
               className="text-pink-400 hover:text-pink-600 transition-colors p-1"
               aria-label="Tutup"
             >
