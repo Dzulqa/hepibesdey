@@ -81,12 +81,41 @@ Secara default, website sudah dilengkapi dengan melodi piano romantis berbasis W
 
 ---
 
+## 📱 Fitur PWA (Progressive Web App) & Offline Mode
+
+Aplikasi ini sudah berstatus **PWA Standalone** penuh dan dapat diinstall di HP Android, iPhone, maupun PC/Laptop Windows:
+
+1. **Bisa Diinstall di Android**:
+   - Buka website di browser Chrome / Samsung Internet.
+   - Klik tombol **"Install App"** di navbar atau banner bawah, atau tekan titik tiga (⋮) > **"Tambahkan ke Layar Utama" / "Install Aplikasi"**.
+   - Aplikasi akan memiliki ikon sendiri di layar beranda HP seperti aplikasi Play Store.
+
+2. **Bisa Diinstall di Windows / PC**:
+   - Buka website di Google Chrome atau Microsoft Edge.
+   - Klik tombol **"Install App"** di navbar atau klik ikon monitor/install (+) di ujung bilah URL (omnibox).
+   - Aplikasi akan terpasang di Start Menu, desktop, dan taskbar Windows dengan jendela mandiri (*standalone window*).
+
+3. **100% Berfungsi Secara Offline**:
+   - Menggunakan Service Worker & Workbox yang secara otomatis melakukan *pre-cache* terhadap:
+     - Semua halaman dan rute (termasuk halaman fallback `~offline`).
+     - Seluruh foto kenangan & galeri (`/images/*`).
+     - Seluruh file musik lagu romantis (`/audio/*`).
+     - Seluruh font Google (Caveat, Dancing Script, Playfair Display, Plus Jakarta Sans).
+   - Saat internet dimatikan atau offline, user tetap bisa membuka web, melihat galeri, mendengarkan musik, dan mengetik balasan pesan (pesan akan tersimpan di antrean offline lokal dan otomatis tersinkronisasi saat kembali terhubung ke internet).
+
+---
+
 ## 🚀 Cara Menjalankan Project
 
 ```bash
 # Jalankan server development
 npm run dev
 
+# Jalankan build produksi (untuk menguji Service Worker PWA secara penuh)
+npm run build
+npm start
+
 # Buka di browser
 # Kunjungi http://localhost:3000
 ```
+

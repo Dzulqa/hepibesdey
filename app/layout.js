@@ -7,7 +7,7 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#fdf2f4",
+  themeColor: "#d95376",
 };
 
 export const metadata = {
@@ -43,6 +43,9 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Alika" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#d95376" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="min-h-screen flex flex-col antialiased selection:bg-pink-300 selection:text-pink-900">
         <SmoothScroll>

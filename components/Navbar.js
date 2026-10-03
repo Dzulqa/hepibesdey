@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Heart, Music, VolumeX, Menu, X } from "lucide-react";
+import { Heart, Music, VolumeX, Menu, X, Download } from "lucide-react";
 
 export default function Navbar({
   activeTab,
@@ -73,7 +73,7 @@ export default function Navbar({
         </nav>
 
         {/* Right Action Items */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-2.5">
           {/* Background Music Toggle */}
           <button
             onClick={toggleMusic}
@@ -97,10 +97,20 @@ export default function Navbar({
             )}
           </button>
 
+          {/* PWA Install Button */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("trigger-pwa-install"))}
+            title="Download / Pasang Aplikasi di HP atau Komputer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-pink-200 bg-pink-50/70 text-pink-700 hover:bg-pink-100 active:scale-95 transition-all duration-200"
+          >
+            <Download className="w-3.5 h-3.5 text-pink-600" />
+            <span className="hidden lg:inline">Install App</span>
+          </button>
+
           {/* Special "For You ♡" Pill Button */}
           <button
             onClick={onOpenSpecialModal}
-            className="px-5 py-2 rounded-full text-xs tracking-wide font-medium bg-gradient-to-r from-pink-400/90 to-rose-400/90 text-white shadow-sm hover:shadow-md hover:from-pink-500 hover:to-rose-500 active:scale-95 transition-all duration-200 border border-pink-200/60 flex items-center gap-1.5"
+            className="px-4 py-2 rounded-full text-xs tracking-wide font-medium bg-gradient-to-r from-pink-400/90 to-rose-400/90 text-white shadow-sm hover:shadow-md hover:from-pink-500 hover:to-rose-500 active:scale-95 transition-all duration-200 border border-pink-200/60 flex items-center gap-1.5"
           >
             <span>For You</span>
             <Heart className="w-3 h-3 fill-white" />
@@ -109,6 +119,13 @@ export default function Navbar({
 
         {/* Mobile Hamburger Button */}
         <div className="flex md:hidden items-center gap-2">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("trigger-pwa-install"))}
+            className="p-2 rounded-full text-pink-600 hover:bg-pink-50"
+            title="Install Aplikasi"
+          >
+            <Download className="w-4 h-4 text-pink-600" />
+          </button>
           <button
             onClick={toggleMusic}
             className="p-2 rounded-full text-pink-600"
@@ -144,7 +161,17 @@ export default function Navbar({
                 {link.label}
               </button>
             ))}
-            <div className="pt-2 border-t border-pink-100 flex items-center justify-between">
+            <div className="pt-2 border-t border-pink-100 flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  window.dispatchEvent(new CustomEvent("trigger-pwa-install"));
+                }}
+                className="w-full py-2.5 rounded-full text-xs font-semibold border border-pink-200 bg-pink-50 text-pink-700 flex items-center justify-center gap-2 hover:bg-pink-100 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5 text-pink-600" />
+                <span>Install Aplikasi (Bisa Offline)</span>
+              </button>
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);

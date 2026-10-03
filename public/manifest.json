@@ -1,14 +1,18 @@
 {
   "name": "Happy Birthday Alika",
   "short_name": "Alika",
-  "description": "Website spesial untuk ulang tahun Alika",
+  "description": "Website spesial edisi ulang tahun untuk Alika dengan memori, galeri foto, musik romantis, dan surat cinta.",
   "start_url": "/",
   "scope": "/",
   "id": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
   "background_color": "#fdf2f4",
   "theme_color": "#d95376",
+  "lang": "id",
+  "dir": "ltr",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -47,5 +51,59 @@
       "purpose": "any"
     }
   ],
-  "categories": ["lifestyle", "entertainment"]
+  "screenshots": [
+    {
+      "src": "/screenshots/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Tampilan Beranda Alika di Desktop & Windows"
+    },
+    {
+      "src": "/screenshots/screenshot-mobile.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tampilan Aplikasi Alika di HP Android"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Kirim Pesan & Surat",
+      "short_name": "Pesan",
+      "description": "Kirim balasan surat cinta spesial untuk Alika",
+      "url": "/#messages",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Galeri Foto Kenangan",
+      "short_name": "Galeri",
+      "description": "Buka koleksi foto manis bersama Alika",
+      "url": "/#gallery",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Kotak Kejutan & Hadiah",
+      "short_name": "Kejutan",
+      "description": "Buka kejutan dan mini game ulang tahun",
+      "url": "/#surprise",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "categories": ["lifestyle", "entertainment", "social"]
 }
