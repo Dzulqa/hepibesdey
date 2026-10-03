@@ -8,6 +8,7 @@ export default function PWAInstallPrompt() {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [activePlatformTab, setActivePlatformTab] = useState("android");
 
@@ -21,6 +22,11 @@ export default function PWAInstallPrompt() {
     };
 
     checkStandalone();
+
+    // 1b. Check localStorage for previously installed flag
+    if (localStorage.getItem("pwa-alika-installed") === "true") {
+      setIsAlreadyInstalled(true);
+    }
 
     // 2. Register Service Worker reliably (check document.readyState)
     if ("serviceWorker" in navigator) {
@@ -65,8 +71,10 @@ export default function PWAInstallPrompt() {
     // 5. Successful installation listener
     const handleAppInstalled = () => {
       setIsInstallable(false);
+      setIsAlreadyInstalled(true);
       setDeferredPrompt(null);
       window.deferredPWAInstallPrompt = null;
+      localStorage.setItem("pwa-alika-installed", "true");
       console.log("PWA Alika berhasil diinstall!");
     };
 
@@ -114,8 +122,8 @@ export default function PWAInstallPrompt() {
     }
   };
 
-  // If already opened as standalone app, don't show the bottom banner
-  if (isStandalone) {
+  // If already opened as standalone app OR already installed, don't show the bottom banner
+  if (isStandalone || isAlreadyInstalled) {
     return null;
   }
 
