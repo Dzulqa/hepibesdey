@@ -268,12 +268,12 @@ export default function GallerySection() {
   // Combined list (Foto yang baru diupload tampil di paling depan, lalu foto awal)
   const allPhotos = [...userPhotos, ...initialPhotos];
 
-  // Main page grid: menampilkan hingga 6 foto teratas sesuai kategori
-  const filteredAll =
+  // Halaman utama selalu menampilkan 6 foto utama yang terkunci (tidak bisa dihapus)
+  const filteredInitial =
     activeCategory === "semua"
-      ? allPhotos
-      : allPhotos.filter((p) => p.category === activeCategory);
-  const previewPhotos = filteredAll.slice(0, 6);
+      ? initialPhotos
+      : initialPhotos.filter((p) => p.category === activeCategory);
+  const previewPhotos = filteredInitial.slice(0, 6);
 
   // Modal shows all photos
   const modalFilteredPhotos =
@@ -626,9 +626,12 @@ export default function GallerySection() {
       
       {/* Toast notifikasi ketika pasangan menambahkan foto baru via Realtime */}
       {partnerNotice && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-pink-600 text-white px-5 py-3 rounded-full shadow-xl flex items-center gap-2.5 text-xs sm:text-sm font-medium animate-in fade-in slide-in-from-top-4 border border-pink-400">
+        <div 
+          onClick={() => { setShowAllModal(true); setModalCategory("semua"); setPartnerNotice(null); }}
+          className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-pink-600 hover:bg-pink-700 cursor-pointer text-white px-5 py-3 rounded-full shadow-xl flex items-center gap-2.5 text-xs sm:text-sm font-medium animate-in fade-in slide-in-from-top-4 border border-pink-400 transition"
+        >
           <Sparkles className="w-4 h-4 animate-spin text-pink-200" />
-          <span>{partnerNotice}</span>
+          <span>{partnerNotice} (Ketuk untuk melihat)</span>
         </div>
       )}
 
