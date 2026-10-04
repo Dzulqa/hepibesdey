@@ -1,9 +1,27 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { Heart, Maximize2, X, Plus, Trash2, CheckSquare } from "lucide-react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { 
+  Heart, 
+  Maximize2, 
+  X, 
+  Plus, 
+  Trash2, 
+  CheckSquare, 
+  Loader2, 
+  Sparkles,
+  WifiOff
+} from "lucide-react";
 import confetti from "canvas-confetti";
 import ScrollReveal, { StaggerContainer, StaggerItem } from "@/components/ScrollReveal";
+import { supabase } from "@/lib/supabase";
+import { 
+  compressImage, 
+  getCloudPhotos, 
+  savePhotoToCloud, 
+  deleteCloudPhotos, 
+  updateCloudPhotoLikes 
+} from "@/lib/gallery";
 
 export default function GallerySection() {
   const initialPhotos = [
@@ -57,22 +75,11 @@ export default function GallerySection() {
     },
   ];
 
-  // Fixed 6 photos always shown on main page
-  // Load userPhotos dari localStorage supaya tetap ada setelah refresh
   const [userPhotos, setUserPhotos] = useState([]);
   const [mounted, setMounted] = useState(false);
+  const [cloudStatus, setCloudStatus] = useState("connecting"); // "connected" | "offline" | "table_missing"
+  const [partnerNotice, setPartnerNotice] = useState(null);
 
-  // Load dari localStorage hanya setelah mount (client-side only)
-  // agar tidak terjadi hydration mismatch antara SSR dan client
-  useEffect(() => {
-    setMounted(true);
-    try {
-      const saved = localStorage.getItem("alika_gallery_photos");
-      if (saved) setUserPhotos(JSON.parse(saved));
-    } catch {
-      // ignore
-    }
-  }, []);
   const [activeCategory, setActiveCategory] = useState("semua");
   const [lightboxPhoto,  setLightboxPhoto]  = useState(null);
   const [userLikes,      setUserLikes]      = useState({});
@@ -80,18 +87,17 @@ export default function GallerySection() {
   const [modalCategory,  setModalCategory]  = useState("semua");
 
   // Upload form state
-  const [pendingUpload,  setPendingUpload]  = useState(null); // { src, fileName }
+  const [pendingUpload,  setPendingUpload]  = useState(null); // { src, blob, fileName }
   const [uploadTitle,    setUploadTitle]    = useState("");
   const [uploadCategory, setUploadCategory] = useState("favorit");
+  const [isCompressing,  setIsCompressing]  = useState(false);
+  const [isUploading,    setIsUploading]    = useState(false);
 
   // Multi-select delete state
   const [selectMode,  setSelectMode]  = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkConfirm, setBulkConfirm] = useState(false);
   const [warnBulk,    setWarnBulk]    = useState(false);
-
-  // Combined list for modal (initial 6 + user uploads)
-  const allPhotos = [...initialPhotos, ...userPhotos];
 
   const categories = [
     { id: "semua", label: "Semua Foto" },
@@ -100,32 +106,187 @@ export default function GallerySection() {
     { id: "lucu", label: "Momen Lucu" },
   ];
 
-  // Main page always shows exactly the first 6 initial photos (filtered by category)
-  const filteredInitial =
-    activeCategory === "semua"
-      ? initialPhotos
-      : initialPhotos.filter((p) => p.category === activeCategory);
-  const previewPhotos = filteredInitial.slice(0, 6);
-
-  // Modal shows all photos (initial + user uploaded)
-  const modalFilteredPhotos =
-    modalCategory === "semua"
-      ? allPhotos
-      : allPhotos.filter((p) => p.category === modalCategory);
-
+  // Inisialisasi like counts
   const [likeCounts, setLikeCounts] = useState(() => {
     const init = {};
     initialPhotos.forEach((p) => { init[p.id] = p.likes; });
     return init;
   });
 
-  // Sync userPhotos ke localStorage setiap kali berubah
+  // Fungsi sinkronisasi foto dari Supabase Cloud
+  const fetchCloudPhotos = useCallback(async () => {
+    try {
+      const res = await getCloudPhotos();
+      if (res.success && Array.isArray(res.data)) {
+        setCloudStatus("connected");
+        const formatted = res.data.map((p) => ({
+          id: p.id,
+          src: p.src,
+          fallback: "/images/polaroid_flower.svg",
+          title: p.title,
+          category: p.category || "favorit",
+          likes: p.likes || 0,
+          sender: p.sender || "Kita",
+          isUserUpload: true,
+          createdAt: p.created_at,
+        }));
+
+        setUserPhotos(formatted);
+
+        // Update like counts
+        setLikeCounts((prev) => {
+          const updated = { ...prev };
+          formatted.forEach((p) => {
+            updated[p.id] = p.likes;
+          });
+          return updated;
+        });
+
+        // Simpan cache ke localStorage
+        try {
+          localStorage.setItem("alika_gallery_photos", JSON.stringify(formatted));
+        } catch {
+          // ignore localStorage error
+        }
+      } else {
+        if (res.error?.code === "42P01" || res.error?.message?.includes("does not exist")) {
+          setCloudStatus("table_missing");
+        } else {
+          setCloudStatus("offline");
+        }
+      }
+    } catch (err) {
+      console.warn("Gagal terhubung ke galeri Supabase:", err);
+      setCloudStatus("offline");
+    }
+  }, []);
+
+  // 1. Mount: Load dari localStorage dulu (instan tanpa blank), lalu sync dengan Supabase
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const saved = localStorage.getItem("alika_gallery_photos");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setUserPhotos(parsed);
+        setLikeCounts((prev) => {
+          const updated = { ...prev };
+          parsed.forEach((p) => {
+            updated[p.id] = p.likes || 0;
+          });
+          return updated;
+        });
+      }
+    } catch {
+      // ignore
+    }
+
+    // Ambil data terbaru dari cloud
+    fetchCloudPhotos();
+
+    // 2. Realtime Subscription: Mendengarkan jika pasangan upload/hapus/like foto!
+    let channel;
+    try {
+      channel = supabase
+        .channel("realtime-gallery-sync")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "gallery_photos" },
+          (payload) => {
+            if (payload.eventType === "INSERT") {
+              const newP = payload.new;
+              const formattedPhoto = {
+                id: newP.id,
+                src: newP.src,
+                fallback: "/images/polaroid_flower.svg",
+                title: newP.title,
+                category: newP.category || "favorit",
+                likes: newP.likes || 0,
+                sender: newP.sender || "Pasangan",
+                isUserUpload: true,
+                createdAt: newP.created_at,
+              };
+
+              setUserPhotos((prev) => {
+                // Hindari duplikasi jika sudah ada
+                if (prev.some((p) => p.id === formattedPhoto.id)) return prev;
+                return [formattedPhoto, ...prev];
+              });
+
+              setLikeCounts((prev) => ({
+                ...prev,
+                [formattedPhoto.id]: formattedPhoto.likes,
+              }));
+
+              // Notifikasi manis saat ada foto baru dari pasangan
+              setPartnerNotice(`📸 Foto baru ditambahkan: "${formattedPhoto.title}" ♡`);
+              confetti({
+                particleCount: 35,
+                spread: 60,
+                origin: { y: 0.3 },
+                colors: ["#fda4af", "#f43f5e", "#ec4899"],
+              });
+              setTimeout(() => setPartnerNotice(null), 5000);
+
+            } else if (payload.eventType === "DELETE") {
+              const deletedId = payload.old?.id;
+              if (deletedId) {
+                setUserPhotos((prev) => prev.filter((p) => p.id !== deletedId));
+              }
+            } else if (payload.eventType === "UPDATE") {
+              const updated = payload.new;
+              setUserPhotos((prev) =>
+                prev.map((p) =>
+                  p.id === updated.id
+                    ? { ...p, likes: updated.likes, title: updated.title, category: updated.category }
+                    : p
+                )
+              );
+              setLikeCounts((prev) => ({
+                ...prev,
+                [updated.id]: updated.likes,
+              }));
+            }
+          }
+        )
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            setCloudStatus("connected");
+          }
+        });
+    } catch (err) {
+      console.warn("Realtime channel subscription error:", err);
+    }
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [fetchCloudPhotos]);
+
+  // Combined list (Foto yang baru diupload tampil di paling depan, lalu foto awal)
+  const allPhotos = [...userPhotos, ...initialPhotos];
+
+  // Main page grid: menampilkan hingga 6 foto teratas sesuai kategori
+  const filteredAll =
+    activeCategory === "semua"
+      ? allPhotos
+      : allPhotos.filter((p) => p.category === activeCategory);
+  const previewPhotos = filteredAll.slice(0, 6);
+
+  // Modal shows all photos
+  const modalFilteredPhotos =
+    modalCategory === "semua"
+      ? allPhotos
+      : allPhotos.filter((p) => p.category === modalCategory);
+
+  // Sync userPhotos ke localStorage setiap kali ada perubahan
   useEffect(() => {
     if (!mounted) return;
     try {
       localStorage.setItem("alika_gallery_photos", JSON.stringify(userPhotos));
     } catch (err) {
-      // localStorage penuh (biasanya karena foto base64 terlalu besar)
       console.warn("Gagal menyimpan foto ke localStorage:", err);
     }
   }, [userPhotos, mounted]);
@@ -163,14 +324,18 @@ export default function GallerySection() {
     };
   }, [showAllModal]);
 
+  const getLikes = (photo) => likeCounts[photo.id] ?? photo.likes ?? 0;
 
-  const getLikes = (photo) => likeCounts[photo.id] ?? photo.likes;
-
-  const handleLike = (id, e) => {
+  // Handler Like — sinkron ke cloud jika userPhotos
+  const handleLike = async (id, e) => {
     e.stopPropagation();
     const wasLiked = userLikes[id];
+    const diff = wasLiked ? -1 : 1;
+    const currentCount = likeCounts[id] ?? 0;
+    const newCount = Math.max(0, currentCount + diff);
+
     setUserLikes((prev) => ({ ...prev, [id]: !wasLiked }));
-    setLikeCounts((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + (wasLiked ? -1 : 1) }));
+    setLikeCounts((prev) => ({ ...prev, [id]: newCount }));
 
     if (!wasLiked) {
       confetti({
@@ -180,50 +345,143 @@ export default function GallerySection() {
         colors: ["#fda4af", "#ec4899", "#f43f5e"],
       });
     }
+
+    // Jika foto ada di Supabase, perbarui like count di cloud
+    const targetPhoto = userPhotos.find((p) => p.id === id);
+    if (targetPhoto && typeof id === "number") {
+      await updateCloudPhotoLikes(id, newCount);
+    }
   };
 
-  // Step 1 – user picks a file → open form modal with preview
-  const handleFileSelect = (e) => {
+  // Step 1: User memilih file gambar -> kompresi otomatis untuk efisiensi transfer & preview
+  const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Reset input so same file can be re-selected if needed
-    e.target.value = "";
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setPendingUpload({ src: ev.target.result, fileName: file.name });
+    e.target.value = ""; // reset input
+
+    setIsCompressing(true);
+    try {
+      // Kompresi ke resolusi optimal (max 1200px, WebP/JPEG ~100KB)
+      const compressed = await compressImage(file, 1200, 1200, 0.82);
+      setPendingUpload({
+        src: compressed.dataUrl,
+        blob: compressed.blob,
+        fileName: file.name,
+      });
       setUploadTitle(file.name.replace(/\.[^/.]+$/, ""));
       setUploadCategory("favorit");
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.warn("Gagal kompresi, menggunakan file asli:", err);
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setPendingUpload({
+          src: ev.target.result,
+          blob: file,
+          fileName: file.name,
+        });
+        setUploadTitle(file.name.replace(/\.[^/.]+$/, ""));
+        setUploadCategory("favorit");
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsCompressing(false);
+    }
   };
 
-  // Step 2 – user confirms the form → save to userPhotos (modal only)
-  const handleConfirmUpload = () => {
-    if (!pendingUpload) return;
-    const newPhoto = {
-      id: Date.now(),
-      src: pendingUpload.src,
+  // Step 2: Konfirmasi Upload -> Simpan ke Supabase Cloud (dan cache lokal)
+  const handleConfirmUpload = async () => {
+    if (!pendingUpload || isUploading) return;
+    setIsUploading(true);
+
+    const title = uploadTitle.trim() || pendingUpload.fileName;
+    const category = uploadCategory;
+    const localSrc = pendingUpload.src;
+    const tempId = `local_${Date.now()}`;
+
+    // Optimistic item: langsung tampil di layar pengguna tanpa jeda
+    const optimisticPhoto = {
+      id: tempId,
+      src: localSrc,
       fallback: "/images/polaroid_flower.svg",
-      title: uploadTitle.trim() || pendingUpload.fileName,
-      category: uploadCategory,
+      title,
+      category,
       likes: 0,
       isUserUpload: true,
+      sender: "Kita",
+      createdAt: new Date().toISOString(),
     };
-    setUserPhotos((prev) => [newPhoto, ...prev]);
-    setLikeCounts((prev) => ({ ...prev, [newPhoto.id]: 0 }));
+
+    setUserPhotos((prev) => [optimisticPhoto, ...prev.filter((p) => p.id !== tempId)]);
+    setLikeCounts((prev) => ({ ...prev, [tempId]: 0 }));
     setPendingUpload(null);
-    // Auto-open modal so user sees their new photo
+
+    // Buka modal agar foto langsung terlihat
     setShowAllModal(true);
     setModalCategory("semua");
+
     confetti({
       particleCount: 50,
       spread: 65,
       origin: { y: 0.6 },
       colors: ["#f472b6", "#fda4af", "#ec4899"],
     });
+
+    // Kirim ke Supabase Cloud agar muncul di HP pacar
+    try {
+      const cloudRes = await savePhotoToCloud({
+        title,
+        category,
+        dataUrl: localSrc,
+        blob: pendingUpload.blob,
+        sender: "Kita",
+      });
+
+      if (cloudRes.success && cloudRes.photo) {
+        const savedPhoto = {
+          id: cloudRes.photo.id,
+          src: cloudRes.photo.src,
+          fallback: "/images/polaroid_flower.svg",
+          title: cloudRes.photo.title,
+          category: cloudRes.photo.category,
+          likes: cloudRes.photo.likes || 0,
+          sender: cloudRes.photo.sender || "Kita",
+          isUserUpload: true,
+          createdAt: cloudRes.photo.created_at,
+        };
+
+        // Ganti optimistic tempId dengan id permanen dari Supabase
+        setUserPhotos((prev) =>
+          prev.map((p) => (p.id === tempId ? savedPhoto : p))
+        );
+        setLikeCounts((prev) => {
+          const next = { ...prev };
+          delete next[tempId];
+          next[savedPhoto.id] = savedPhoto.likes;
+          return next;
+        });
+        setCloudStatus("connected");
+      }
+    } catch (err) {
+      console.warn("Upload ke cloud gagal, tersimpan di perangkat lokal:", err);
+      // Simpan ke antrean offline jika koneksi gagal
+      try {
+        const pendingQueue = JSON.parse(localStorage.getItem("alika_pending_photos") || "[]");
+        pendingQueue.push({
+          title,
+          category,
+          src: localSrc,
+          sender: "Kita",
+        });
+        localStorage.setItem("alika_pending_photos", JSON.stringify(pendingQueue));
+      } catch {
+        // ignore
+      }
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  // Single delete from lightbox
+  // Single delete dari lightbox
   const handleSingleDelete = (photo, e) => {
     e?.stopPropagation();
     setSelectedIds(new Set([photo.id]));
@@ -231,7 +489,7 @@ export default function GallerySection() {
     setWarnBulk(false);
   };
 
-  // Toggle a photo's selection in multi-select mode
+  // Toggle selection pada mode pilih hapus
   const toggleSelect = (photo, e) => {
     e.stopPropagation();
     if (!photo.isUserUpload) return;
@@ -251,16 +509,30 @@ export default function GallerySection() {
     else { setWarnBulk(false); setBulkConfirm(true); }
   };
 
-  const confirmBulkDelete = () => {
+  // Konfirmasi hapus foto — hapus dari state lokal & Supabase Cloud
+  const confirmBulkDelete = async () => {
+    const idsToDelete = Array.from(selectedIds);
+
+    // Hapus dari state lokal & lightbox
     setUserPhotos((prev) => prev.filter((p) => !selectedIds.has(p.id)));
     if (lightboxPhoto && selectedIds.has(lightboxPhoto.id)) setLightboxPhoto(null);
     setSelectedIds(new Set());
     setBulkConfirm(false);
     setWarnBulk(false);
     setSelectMode(false);
+
+    // Hapus dari cloud Supabase (hanya yang ID-nya numerik / dari cloud)
+    const cloudIds = idsToDelete.filter((id) => typeof id === "number" || !String(id).startsWith("local_"));
+    if (cloudIds.length > 0) {
+      try {
+        await deleteCloudPhotos(cloudIds);
+      } catch (err) {
+        console.warn("Gagal menghapus dari Supabase:", err);
+      }
+    }
   };
 
-  // Reusable card — multi-select mode with checkbox overlays
+  // Reusable card — grid tampilan foto
   const PhotoCard = ({ photo, inModal = false }) => {
     const isSelected   = selectedIds.has(photo.id);
     const isSelectable = photo.isUserUpload;
@@ -325,7 +597,10 @@ export default function GallerySection() {
 
           {/* Baru badge */}
           {photo.isUserUpload && (
-            <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-500 text-white shadow">Baru</span>
+            <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-500 text-white shadow flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5" />
+              <span>Baru</span>
+            </span>
           )}
         </div>
 
@@ -349,16 +624,45 @@ export default function GallerySection() {
   return (
     <section id="gallery" className="max-w-6xl mx-auto px-4 sm:px-6 pb-14 pt-4 scroll-mt-20">
       
+      {/* Toast notifikasi ketika pasangan menambahkan foto baru via Realtime */}
+      {partnerNotice && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-pink-600 text-white px-5 py-3 rounded-full shadow-xl flex items-center gap-2.5 text-xs sm:text-sm font-medium animate-in fade-in slide-in-from-top-4 border border-pink-400">
+          <Sparkles className="w-4 h-4 animate-spin text-pink-200" />
+          <span>{partnerNotice}</span>
+        </div>
+      )}
+
       {/* Header */}
       <ScrollReveal direction="up" className="text-center space-y-2 mb-10">
-        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-pink-100/80 dark:bg-pink-950/50 text-pink-600 dark:text-pink-400">
-          Memories in Frames
-        </span>
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-pink-100/80 dark:bg-pink-950/50 text-pink-600 dark:text-pink-400">
+            Memories in Frames
+          </span>
+          {/* Status Sinkronisasi Dua Perangkat */}
+          {cloudStatus === "connected" && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" title="Foto tersinkronisasi otomatis antara HP kamu dan HP pasangan">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Sinkron 2 Perangkat ♡</span>
+            </span>
+          )}
+          {cloudStatus === "table_missing" && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title="Perlu eksekusi SQL di Supabase agar sinkron otomatis (Cek halaman /admin)">
+              <span>⚠️ Cloud Belum Aktif</span>
+            </span>
+          )}
+          {cloudStatus === "offline" && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+              <WifiOff className="w-3 h-3" />
+              <span>Mode Lokal</span>
+            </span>
+          )}
+        </div>
+
         <h2 className="text-3xl sm:text-4xl font-serif-romantic text-zinc-800 dark:text-zinc-100">
           Our Gallery
         </h2>
         <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
-          Galeri foto kita dengan tampilan yang estetik dan interaktif ♡
+          Galeri foto kita berdua — upload di perangkatmu, otomatis muncul di perangkat pasanganmu ♡
         </p>
       </ScrollReveal>
 
@@ -383,19 +687,29 @@ export default function GallerySection() {
 
         {/* Upload Custom Photo Input */}
         <label className="cursor-pointer px-4 py-1.5 rounded-full text-xs font-semibold bg-white/90 dark:bg-pink-950/60 text-pink-600 dark:text-pink-300 border border-pink-300 dark:border-pink-800 shadow-xs hover:bg-pink-50 dark:hover:bg-pink-900/40 inline-flex items-center gap-1.5 active:scale-95 transition-all">
-          <Plus className="w-3.5 h-3.5" />
-          <span>Upload Foto Baru</span>
+          {isCompressing ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Memproses...</span>
+            </>
+          ) : (
+            <>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Upload Foto Baru</span>
+            </>
+          )}
           <input
             type="file"
             accept="image/*"
             onChange={handleFileSelect}
+            disabled={isCompressing}
             className="hidden"
           />
         </label>
 
       </div>
 
-      {/* Photo Grid - Staggered (max 6 on main page) */}
+      {/* Photo Grid - Staggered (menampilkan foto terbaru termasuk foto yang diupload) */}
       <StaggerContainer className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6" staggerDelay={0.1}>
         {previewPhotos.map((photo) => (
           <StaggerItem key={photo.id} direction="up">
@@ -443,7 +757,12 @@ export default function GallerySection() {
             </div>
 
             <div className="flex items-center justify-between px-2 pt-1">
-              <h4 className="text-base font-bold text-zinc-800 dark:text-zinc-100">{lightboxPhoto.title}</h4>
+              <div>
+                <h4 className="text-base font-bold text-zinc-800 dark:text-zinc-100">{lightboxPhoto.title}</h4>
+                {lightboxPhoto.isUserUpload && (
+                  <span className="text-[11px] text-pink-500 font-medium">Foto bersama kita ♡</span>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 {lightboxPhoto.isUserUpload && (
                   <button
@@ -475,10 +794,11 @@ export default function GallerySection() {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-pink-100 dark:border-pink-900/60">
               <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
-                <span>🖼️</span> Detail Foto
+                <span>🖼️</span> Detail Foto Baru
               </h3>
               <button
                 onClick={() => setPendingUpload(null)}
+                disabled={isUploading}
                 className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-pink-50 dark:hover:bg-pink-900/40 transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -487,13 +807,22 @@ export default function GallerySection() {
 
             {/* Preview */}
             <div className="px-6 pt-5">
-              <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden bg-pink-50 dark:bg-pink-950/40">
+              <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden bg-pink-50 dark:bg-pink-950/40 relative">
                 <img src={pendingUpload.src} alt="preview" className="w-full h-full object-cover" />
+                <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/60 text-white text-[10px] backdrop-blur-xs">
+                  Otomatis dikompres &amp; sinkron
+                </span>
               </div>
             </div>
 
             {/* Form */}
             <div className="px-6 pt-4 pb-6 space-y-4">
+              {/* Cloud Sync Info Callout */}
+              <div className="p-3 rounded-2xl bg-pink-50/70 dark:bg-pink-950/30 border border-pink-200/80 dark:border-pink-900/60 flex items-center gap-2 text-xs text-pink-700 dark:text-pink-300">
+                <Sparkles className="w-4 h-4 shrink-0 text-pink-500" />
+                <span>Foto ini akan otomatis tersinkron dan muncul di perangkat kamu dan pasanganmu ♡</span>
+              </div>
+
               {/* Title */}
               <div>
                 <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1.5">Judul Foto</label>
@@ -502,6 +831,7 @@ export default function GallerySection() {
                   value={uploadTitle}
                   onChange={(e) => setUploadTitle(e.target.value)}
                   placeholder="Tulis judul foto..."
+                  disabled={isUploading}
                   className="w-full px-4 py-2.5 rounded-xl border border-pink-200 dark:border-pink-800 bg-pink-50/50 dark:bg-pink-950/30 text-sm text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-pink-400 transition"
                 />
               </div>
@@ -518,6 +848,7 @@ export default function GallerySection() {
                     <button
                       key={cat.id}
                       type="button"
+                      disabled={isUploading}
                       onClick={() => setUploadCategory(cat.id)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                         uploadCategory === cat.id
@@ -535,17 +866,25 @@ export default function GallerySection() {
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={() => setPendingUpload(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-pink-200 dark:border-pink-800 text-sm font-semibold text-zinc-500 dark:text-zinc-300 hover:bg-pink-50 dark:hover:bg-pink-900/30 transition"
+                  disabled={isUploading}
+                  className="flex-1 py-2.5 rounded-xl border border-pink-200 dark:border-pink-800 text-sm font-semibold text-zinc-500 dark:text-zinc-300 hover:bg-pink-50 dark:hover:bg-pink-900/30 transition disabled:opacity-50"
                 >
                   Batal
                 </button>
                 <button
                   onClick={handleConfirmUpload}
-                  disabled={!uploadTitle.trim()}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!uploadTitle.trim() || isUploading}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md shadow-pink-300/40"
                   style={{ background: "linear-gradient(135deg, #f472b6 0%, #ec4899 60%, #db2777 100%)" }}
                 >
-                  Simpan Foto ♡
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Mengunggah...</span>
+                    </>
+                  ) : (
+                    <span>Simpan &amp; Bagikan ♡</span>
+                  )}
                 </button>
               </div>
             </div>
@@ -566,7 +905,7 @@ export default function GallerySection() {
             onTouchMove={(e) => { e.preventDefault(); e.stopPropagation(); }}
           />
 
-          {/* Modal Box — posisi absolute di tengah layar, scroll ada di dalam sini */}
+          {/* Modal Box */}
           <div
             data-lenis-prevent="true"
             className="fixed z-50 bg-white dark:bg-[#1a0d22] rounded-3xl border border-pink-200 dark:border-pink-900 shadow-2xl flex flex-col lenis-prevent"
@@ -580,7 +919,7 @@ export default function GallerySection() {
               overflow: "hidden",
             }}
           >
-            {/* Header — tetap di atas */}
+            {/* Header */}
             <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 bg-white dark:bg-[#1a0d22] border-b border-pink-100 dark:border-pink-900/60 rounded-t-3xl">
               <div>
                 <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
@@ -613,7 +952,7 @@ export default function GallerySection() {
               </div>
             </div>
 
-            {/* Category Filter — tetap di bawah header */}
+            {/* Category Filter */}
             {!selectMode && (
               <div className="flex-shrink-0 flex flex-wrap gap-2 px-6 py-4 border-b border-pink-100 dark:border-pink-900/40">
                 {categories.map((cat) => (
@@ -639,11 +978,11 @@ export default function GallerySection() {
             {selectMode && (
               <div className="flex-shrink-0 flex items-center gap-2 px-6 py-3 bg-red-50/60 dark:bg-red-950/20 border-b border-red-100 dark:border-red-900/30">
                 <CheckSquare className="w-4 h-4 text-red-400 shrink-0" />
-                <p className="text-xs text-red-500 dark:text-red-400">Hanya foto yang kamu upload yang bisa dipilih. Foto asli dilindungi.</p>
+                <p className="text-xs text-red-500 dark:text-red-400">Hanya foto yang kamu atau pasanganmu upload yang bisa dipilih. Foto asli dilindungi.</p>
               </div>
             )}
 
-            {/* ===== SCROLLABLE PHOTO GRID ===== */}
+            {/* Scrollable Photo Grid */}
             <div
               ref={scrollGridRef}
               data-lenis-prevent="true"
@@ -665,7 +1004,7 @@ export default function GallerySection() {
               </div>
             </div>
 
-            {/* Delete action bar — tetap di bawah */}
+            {/* Delete action bar */}
             {selectMode && selectedIds.size > 0 && (
               <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 bg-white dark:bg-[#1a0d22] border-t border-red-100 dark:border-red-900/40 shadow-lg rounded-b-3xl">
                 <span className="text-sm font-semibold text-red-500">{selectedIds.size} foto dipilih</span>
@@ -682,7 +1021,6 @@ export default function GallerySection() {
         </>
       )}
 
-
       {/* Warning Dialog >5 photos */}
       {warnBulk && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
@@ -696,7 +1034,7 @@ export default function GallerySection() {
               <div>
                 <h4 className="text-sm font-bold text-zinc-800 dark:text-zinc-100">Hapus Banyak Foto?</h4>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                  Kamu mau hapus <span className="font-bold text-orange-500">{selectedIds.size} foto</span> sekaligus — ini lumayan banyak ya. Pastikan sudah yakin, foto yang dihapus tidak bisa dikembalikan.
+                  Kamu mau hapus <span className="font-bold text-orange-500">{selectedIds.size} foto</span> sekaligus dari kedua perangkat. Foto yang dihapus tidak bisa dikembalikan.
                 </p>
               </div>
             </div>
@@ -719,7 +1057,7 @@ export default function GallerySection() {
               <div>
                 <h4 className="text-sm font-bold text-zinc-800 dark:text-zinc-100">Konfirmasi Hapus</h4>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  {selectedIds.size === 1 ? "1 foto akan dihapus permanen." : `${selectedIds.size} foto akan dihapus permanen.`}
+                  {selectedIds.size === 1 ? "1 foto akan dihapus permanen dari kedua HP." : `${selectedIds.size} foto akan dihapus permanen dari kedua HP.`}
                 </p>
               </div>
             </div>

@@ -15,6 +15,29 @@ export default function OfflineIndicator() {
       setIsOffline(!navigator.onLine);
     }
 
+    const syncPendingPhotos = async () => {
+      try {
+        const pending = JSON.parse(localStorage.getItem("alika_pending_photos") || "[]");
+        if (pending.length === 0) return;
+
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey =
+          process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+        if (!supabaseUrl || !supabaseKey) return;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        const { error } = await supabase.from("gallery_photos").insert(pending);
+        if (!error) {
+          localStorage.removeItem("alika_pending_photos");
+          console.log(`Synced ${pending.length} offline photos to Supabase!`);
+        }
+      } catch (err) {
+        console.warn("Could not sync pending photos yet:", err);
+      }
+    };
+
     const syncPendingMessages = async () => {
       try {
         const pending = JSON.parse(localStorage.getItem("alika_pending_messages") || "[]");
@@ -49,6 +72,7 @@ export default function OfflineIndicator() {
       setIsOffline(false);
       setShowReconnected(true);
       syncPendingMessages();
+      syncPendingPhotos();
       const timer = setTimeout(() => setShowReconnected(false), 4000);
       return () => clearTimeout(timer);
     };

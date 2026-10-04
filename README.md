@@ -53,7 +53,7 @@ Website ulang tahun interaktif, responsif, dan estetik bertema romantic blush pi
 9. **Our Gallery**:
    - Galeri foto estetik dengan filter kategori (*Semua*, *Foto Favorit*, *Kencan Kita*, *Momen Lucu*).
    - Tombol *Like* interaktif dengan penghitung jumlah suka.
-   - Fitur upload foto langsung dari perangkat untuk melihat preview langsung.
+   - Fitur upload foto langsung dari perangkat dengan kompresi otomatis & sinkronisasi real-time antar perangkat (upload di HP kamu, seketika muncul di HP Alika).
 
 10. **Surprises & Mini Games**:
     - **Kotak Kado 3D**: Klik untuk membuka kado dan memicu hujan konfeti!
@@ -70,7 +70,7 @@ Semua foto dummy sudah disiapkan di dalam folder [`public/images/`](file:///c:/U
 1. **Foto Utama (Hero Polaroid)**: Ganti file `public/images/alika_hero.jpg` dengan foto Alika favoritmu.
 2. **Foto Sunset / Pantai**: Ganti file `public/images/polaroid_sunset.jpg`.
 3. **Foto Kucing / Lucu**: Ganti file `public/images/polaroid_cat.svg` (bisa gunakan `.jpg` atau `.png`).
-4. **Foto Lainnya**: Kamu juga bisa langsung upload foto baru lewat tombol *"Upload Foto Baru"* di bagian Galeri saat web berjalan.
+4. **Foto Lainnya**: Kamu juga bisa langsung upload foto baru lewat tombol *"Upload Foto Baru"* di bagian Galeri saat web berjalan. Foto akan otomatis tersimpan di Cloud Supabase dan langsung muncul di HP pasanganmu secara real-time.
 
 ---
 
