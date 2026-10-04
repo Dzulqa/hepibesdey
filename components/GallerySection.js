@@ -210,7 +210,7 @@ export default function GallerySection() {
               setUserPhotos((prev) => {
                 // Hindari duplikasi jika sudah ada
                 if (prev.some((p) => p.id === formattedPhoto.id)) return prev;
-                return [formattedPhoto, ...prev];
+                return [...prev, formattedPhoto];
               });
 
               setLikeCounts((prev) => ({
@@ -265,8 +265,8 @@ export default function GallerySection() {
     };
   }, [fetchCloudPhotos]);
 
-  // Combined list (Foto yang baru diupload tampil di paling depan, lalu foto awal)
-  const allPhotos = [...userPhotos, ...initialPhotos];
+  // 6 foto asli tetap di posisi awal 1-6 (tidak berubah tempat), foto baru yang diupload ditaruh di paling bawah
+  const allPhotos = [...initialPhotos, ...userPhotos];
 
   // Halaman utama selalu menampilkan 6 foto utama yang terkunci (tidak bisa dihapus)
   const filteredInitial =
@@ -411,7 +411,7 @@ export default function GallerySection() {
       createdAt: new Date().toISOString(),
     };
 
-    setUserPhotos((prev) => [optimisticPhoto, ...prev.filter((p) => p.id !== tempId)]);
+    setUserPhotos((prev) => [...prev.filter((p) => p.id !== tempId), optimisticPhoto]);
     setLikeCounts((prev) => ({ ...prev, [tempId]: 0 }));
     setPendingUpload(null);
 
